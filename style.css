@@ -484,7 +484,7 @@ body {
   white-space: nowrap;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 560px) {
   .deck { flex-direction: column; gap: 14px; }
   .knob-cluster { flex-wrap: wrap; justify-content: center; }
   .side { border-left: none; padding-left: 0; justify-content: center; }
