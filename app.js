@@ -14,6 +14,12 @@ window.addEventListener("unhandledrejection", (e) => showErr(e.reason));
 /* ── shared parameter state ───────────────────────────────────── */
 
 const params = { time: 100, pitch: 0, lookahead: 5, mix: 100 };
+const engine = {
+  ctx: null, buffer: null, trackName: "",
+  dry: null, wet: null, dryGain: null, wetGain: null,
+  master: null, analyser: null, playing: false, paused: false, startAt: 0,
+};
+
 
 const FMT = {
   time: (v) => `${Math.round(v)}% ${Math.round(v) === 100 ? "HALFTIME" : "SCREW"}`,
@@ -71,12 +77,6 @@ document.querySelectorAll(".knob-wrap").forEach((wrap) => {
 });
 
 /* ── audio engine ──────────────────────────────────────────────── */
-
-const engine = {
-  ctx: null, buffer: null, trackName: "",
-  dry: null, wet: null, dryGain: null, wetGain: null,
-  master: null, analyser: null, playing: false, paused: false, startAt: 0,
-};
 
 function ensureCtx() {
   if (!engine.ctx) {
