@@ -17,7 +17,7 @@ const params = { time: 100, pitch: 0, lookahead: 5, mix: 100 };
 const engine = {
   ctx: null, buffer: null, trackName: "",
   dry: null, wet: null, dryGain: null, wetGain: null,
-  master: null, analyser: null, playing: false, paused: false, startAt: 0,
+  master: null, analyser: null, playing: false, paused: false, startAt: 0, wake: null,
 };
 
 
@@ -56,7 +56,7 @@ document.querySelectorAll(".knob-wrap").forEach((wrap) => {
     startY = e.clientY;
     prevVal = val;
     wrap.classList.add("dragging");
-    wrap.setPointerCapture(e.pointerId);
+    try { wrap.setPointerCapture(e.pointerId); } catch (_) {}
   });
   wrap.addEventListener("pointermove", (e) => {
     if (!active) return;
@@ -146,13 +146,22 @@ function startPlayback() {
   engine.playing = true;
 }
 
+function nowPlayingText() {
+  if (engine.playing && $("#nowPlaying").textContent.indexOf("NOW PLAYING") < 0)
+    $("#nowPlaying").textContent = `NOW PLAYING · ${engine.trackName}`;
+}
+
 function armWake() {
-  if (engine.ctx && engine.ctx.state === "suspended") {
-    document.addEventListener("pointerdown", function wake() {
-      document.removeEventListener("pointerdown", wake);
-      if (engine.ctx && engine.ctx.state === "suspended") engine.ctx.resume();
-    });
-  }
+  if (!engine.ctx || engine.ctx.state !== "suspended") return;
+  if (engine.wake) document.removeEventListener("pointerdown", engine.wake);
+  engine.wake = () => {
+    document.removeEventListener("pointerdown", engine.wake);
+    engine.wake = null;
+    if (engine.ctx && engine.ctx.state === "suspended") {
+      engine.ctx.resume().then(() => { if (engine.ctx.state === "running") nowPlayingText(); });
+    }
+  };
+  document.addEventListener("pointerdown", engine.wake);
 }
 
 function setTrack(buffer, name) {
@@ -164,6 +173,12 @@ function setTrack(buffer, name) {
   document.querySelectorAll(".chip").forEach((c) => c.classList.remove("active"));
   startPlayback();
   playBtn.innerHTML = engine.playing ? ICON_PAUSE : ICON_PLAY;
+  armWake();
+  setTimeout(() => {
+    if (!engine.playing) return;
+    if (engine.ctx.state === "running") nowPlayingText();
+    else $("#nowPlaying").textContent = "AUDIO ON HOLD · TAP THE PANEL TO START";
+  }, 600);
 }
 
 /* ── demo beats — synthesized in-browser, Prod. TheBeatMob ──────── */
@@ -175,12 +190,14 @@ const DEMOS = {
   latenight: { name: "LATE NIGHT", bpm: 142, root: 49.0, kind: "drill" },
 };
 
+const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+
 function renderDemo(spec) {
   const sr = 44100;
   const stepDur = 60 / spec.bpm / 4;
   const steps = 64; // 4 bars
   const dur = steps * stepDur + 0.6;
-  const off = new OfflineAudioContext(2, Math.ceil(dur * sr), sr);
+  const off = new OAC(2, Math.ceil(dur * sr), sr);
 
   const master = off.createGain();
   master.gain.value = 0.85;
@@ -289,14 +306,17 @@ function renderDemo(spec) {
 }
 
 async function loadDemo(key) {
-  ensureCtx(); // inside the click gesture — keeps autoplay legal on mobile
   const spec = DEMOS[key];
+  const chip = $(`#demo-${key}`);
+  chip.classList.add("active");
+  $("#nowPlaying").textContent = `RENDERING · ${spec.name}…`;
+  ensureCtx(); // inside the click gesture — keeps autoplay legal on mobile
   try {
     if (!DEMO_CACHE[key]) DEMO_CACHE[key] = await renderDemo(spec);
     setTrack(DEMO_CACHE[key], `${spec.name} · Prod.TheBeatMob`);
-    $(`#demo-${key}`).classList.add("active");
-    armWake();
+    chip.classList.add("active");
   } catch (err) {
+    chip.classList.remove("active");
     showErr(err);
   }
 }
@@ -308,6 +328,7 @@ $("#demo-latenight").addEventListener("click", () => loadDemo("latenight"));
 
 async function loadUserFile(file) {
   const ctx = ensureCtx();
+  $("#nowPlaying").textContent = `DECODING · ${file.name.replace(/\.[^.]+$/, "").toUpperCase().slice(0, 20)}…`;
   const data = await file.arrayBuffer();
   try {
     const buf = await ctx.decodeAudioData(data);
@@ -368,7 +389,7 @@ $("#exportBtn").addEventListener("click", async function () {
   const rate = params.time / 100;
   const src = engine.buffer;
   const outLen = Math.ceil(src.length / rate);
-  const off = new OfflineAudioContext(src.numberOfChannels, outLen, src.sampleRate);
+  const off = new OAC(src.numberOfChannels, outLen, src.sampleRate);
   const s = off.createBufferSource();
   s.buffer = src;
   s.playbackRate.value = rate;
