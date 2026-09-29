@@ -30,6 +30,16 @@
       </div>
     </header>
 
+    <!-- ── track bar ──────────────────────────────────────── -->
+    <section class="track-bar">
+      <button class="chip" id="demo-frostbite">FROSTBITE <em>Prod. TheBeatMob</em></button>
+      <button class="chip" id="demo-latenight">LATE NIGHT <em>Prod. TheBeatMob</em></button>
+      <label class="chip load" id="loadChip">LOAD YOUR OWN
+        <input type="file" id="fileInput" accept="audio/*" hidden>
+      </label>
+      <span class="now" id="nowPlaying">NO TRACK LOADED · DRAG A SONG ONTO THE DISPLAY</span>
+    </section>
+
     <!-- ── single-DIN control row ─────────────────────────── -->
     <section class="din-row">
 
@@ -107,7 +117,7 @@
 
     <i class="screw tl"></i><i class="screw tr"></i><i class="screw bl"></i><i class="screw br"></i>
   </div>
-  <p class="hint">drag the knobs · double-click resets · it's live</p>
+  <p class="hint">drop a song on the display · drag knobs · export the slowed wav</p>
 </main>
 <script src="app.js"></script>
 </body>
