@@ -17,7 +17,8 @@ const params = { time: 100, pitch: 0, lookahead: 5, mix: 100 };
 const engine = {
   ctx: null, buffer: null, trackName: "",
   dry: null, wet: null, dryGain: null, wetGain: null,
-  master: null, analyser: null, playing: false, paused: false, startAt: 0, wake: null,
+  master: null, analyser: null, playing: false, paused: false, startAt: 0,
+  offset: 0, loopEnd: 0, wake: null,
 };
 
 
@@ -113,16 +114,21 @@ function stopPlayback() {
   engine.playing = false;
 }
 
-function startPlayback() {
+function startPlayback(offset = 0) {
   const ctx = ensureCtx();
   stopPlayback();
   if (!engine.buffer) return;
+
+  engine.loopEnd = engine.buffer.__loopEnd || engine.buffer.duration;
+  offset = Math.max(0, Math.min(offset, engine.loopEnd - 0.01));
 
   engine.dry = ctx.createBufferSource();
   engine.wet = ctx.createBufferSource();
   engine.dry.buffer = engine.buffer;
   engine.wet.buffer = engine.buffer;
   engine.dry.loop = engine.wet.loop = true;
+  engine.dry.loopStart = engine.wet.loopStart = 0;
+  engine.dry.loopEnd = engine.wet.loopEnd = engine.loopEnd;
 
   engine.dryGain = ctx.createGain();
   engine.wetGain = ctx.createGain();
@@ -140,9 +146,10 @@ function startPlayback() {
   engine.dryGain.gain.value = 1 - w;
 
   const t = ctx.currentTime + 0.05;
-  engine.dry.start(t);
-  engine.wet.start(t);
+  engine.dry.start(t, offset);
+  engine.wet.start(t, offset);
   engine.startAt = t;
+  engine.offset = offset;
   engine.playing = true;
 }
 
@@ -195,7 +202,8 @@ const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
 function renderDemo(spec) {
   const sr = 44100;
   const stepDur = 60 / spec.bpm / 4;
-  const steps = 64; // 4 bars
+  const REPS = 4; // 16 bars ≈ 28 s — a real track, not a clip
+  const steps = 64 * REPS;
   const dur = steps * stepDur + 0.6;
   const off = new OAC(2, Math.ceil(dur * sr), sr);
 
@@ -274,35 +282,45 @@ function renderDemo(spec) {
 
   if (spec.kind === "dark") {
     // FROSTBITE — creeping dark trap, F minor
-    [0, 10, 16, 26, 32, 42, 48, 58].forEach(kick);
-    [8, 24, 40, 56].forEach(snare);
-    for (let s = 0; s < steps; s += 2) hat(s, s % 16 === 14);
-    sub(0, F, stepDur * 4); sub(6, F, stepDur * 3);
-    sub(12, minor[1], stepDur * 4);
-    sub(16, F, stepDur * 3); sub(22, minor[2] * 2, stepDur * 2, minor[1]);
-    sub(32, F, stepDur * 4); sub(38, F, stepDur * 3, minor[2]);
-    sub(44, minor[1], stepDur * 4);
-    sub(48, F, stepDur * 4); sub(54, minor[1], stepDur * 2, F);
-    [0, 16, 32, 48].forEach((b) => {
-      bell(b, F * 4);
-      bell(b + 5, minor[1] * 4);
-      bell(b + 10, minor[2] * 4);
-    });
+    for (let r = 0; r < REPS; r++) {
+      const o = r * 64;
+      [0, 10, 16, 26, 32, 42, 48, 58].forEach((st) => kick(o + st));
+      [8, 24, 40, 56].forEach((st) => snare(o + st));
+      for (let st = 0; st < 64; st += 2) hat(o + st, st % 16 === 14);
+      sub(o + 0, F, stepDur * 4); sub(o + 6, F, stepDur * 3);
+      sub(o + 12, minor[1], stepDur * 4);
+      sub(o + 16, F, stepDur * 3); sub(o + 22, minor[2] * 2, stepDur * 2, minor[1]);
+      sub(o + 32, F, stepDur * 4); sub(o + 38, F, stepDur * 3, minor[2]);
+      sub(o + 44, minor[1], stepDur * 4);
+      sub(o + 48, F, stepDur * 4); sub(o + 54, minor[1], stepDur * 2, F);
+      if (r % 2 === 1) {
+        [0, 16, 32, 48].forEach((b) => {
+          bell(o + b, F * 4);
+          bell(o + b + 5, minor[1] * 4);
+          bell(o + b + 10, minor[2] * 4);
+        });
+      }
+      if (r === REPS - 1) [60, 61, 62, 63].forEach((st) => snare(o + st)); // loop fill
+    }
   } else {
     // LATE NIGHT — sliding drill, G minor
-    [0, 8, 16, 20, 24, 32, 40, 48, 52, 56].forEach(kick);
-    [12, 28, 44, 60].forEach(snare);
-    for (let s = 0; s < steps; s += 2) hat(s, s % 32 === 30);
-    sub(0, F, stepDur * 6, F * 0.75); sub(10, F, stepDur * 4);
-    sub(16, minor[1], stepDur * 4, F);
-    sub(24, F, stepDur * 5, minor[1]);
-    sub(32, F, stepDur * 6, F * 0.75); sub(42, F, stepDur * 3, minor[2]);
-    sub(48, minor[1], stepDur * 4, F);
-    sub(56, F, stepDur * 6, F * 1.33);
-    [0, 16, 32, 48].forEach((b) => bell(b, F * 4 * 1.19)); // slightly sour bell
+    for (let r = 0; r < REPS; r++) {
+      const o = r * 64;
+      [0, 8, 16, 20, 24, 32, 40, 48, 52, 56].forEach((st) => kick(o + st));
+      [12, 28, 44, 60].forEach((st) => snare(o + st));
+      for (let st = 0; st < 64; st += 2) hat(o + st, st % 32 === 30);
+      sub(o + 0, F, stepDur * 6, F * 0.75); sub(o + 10, F, stepDur * 4);
+      sub(o + 16, minor[1], stepDur * 4, F);
+      sub(o + 24, F, stepDur * 5, minor[1]);
+      sub(o + 32, F, stepDur * 6, F * 0.75); sub(o + 42, F, stepDur * 3, minor[2]);
+      sub(o + 48, minor[1], stepDur * 4, F);
+      sub(o + 56, F, stepDur * 6, F * 1.33);
+      if (r % 2 === 0) [0, 16, 32, 48].forEach((b) => bell(o + b, F * 4 * 1.19)); // slightly sour bell
+      if (r === REPS - 1) [58, 60, 62, 63].forEach((st) => snare(o + st)); // loop fill
+    }
   }
 
-  return off.startRendering();
+  return off.startRendering().then((b) => { b.__loopEnd = steps * stepDur; return b; });
 }
 
 async function loadDemo(key) {
@@ -354,6 +372,46 @@ scopeEl.addEventListener("drop", (e) => {
   const f = e.dataTransfer.files && e.dataTransfer.files[0];
   if (f) loadUserFile(f);
 });
+
+/* ── scrub: tap the wave to jump, drag to scan ───────────────────── */
+
+function seekAt(clientX) {
+  if (!engine.buffer) return;
+  const r = canvas.getBoundingClientRect();
+  const f = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
+  const wasPlaying = engine.playing;
+  startPlayback(f * (engine.buffer.__loopEnd || engine.buffer.duration));
+  if (!wasPlaying) playBtn.innerHTML = engine.playing ? ICON_PAUSE : ICON_PLAY;
+}
+
+let scrubbing = false, lastScrub = 0;
+canvas.addEventListener("pointerdown", (e) => {
+  if (!engine.buffer) return;
+  scrubbing = true;
+  try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+  seekAt(e.clientX);
+  scrubHint();
+});
+canvas.addEventListener("pointermove", (e) => {
+  if (!scrubbing) return;
+  const now = performance.now();
+  if (now - lastScrub < 90) return;
+  lastScrub = now;
+  seekAt(e.clientX);
+  scrubHint();
+});
+["pointerup", "pointercancel"].forEach((ev) =>
+  canvas.addEventListener(ev, (e) => {
+    if (!scrubbing) return;
+    scrubbing = false;
+    seekAt(e.clientX);
+    nowPlayingText();
+  }));
+
+function scrubHint() {
+  if (engine.buffer)
+    $("#nowPlaying").textContent = `SCAN · ${fmtTime(trackPos())} / ${fmtTime(engine.loopEnd || engine.buffer.duration)}`;
+}
 
 /* ── EXPORT — render the slowed version to a WAV ───────────────── */
 
@@ -415,6 +473,7 @@ let peaks = null;
 function fit() {
   W = canvas.width = canvas.clientWidth || 600;
   H = canvas.height = canvas.clientHeight || 104;
+  peaks = null;
 }
 fit();
 addEventListener("resize", fit);
@@ -450,9 +509,21 @@ function synthWave(seed, x, density) {
 let offset = 0;
 let powered = true;
 
+function trackPos() {
+  if (!engine.playing || !engine.buffer || !engine.loopEnd) return 0;
+  const rate = params.time / 100;
+  const elapsed = Math.max(0, engine.ctx.currentTime - engine.startAt);
+  return (engine.offset + elapsed * rate) % engine.loopEnd;
+}
+
+function fmtTime(t) {
+  const m = Math.floor(t / 60);
+  const sec = Math.floor(t % 60);
+  return `${m}:${sec < 10 ? "0" : ""}${sec}`;
+}
+
 function drawScope() {
   ctx.clearRect(0, 0, W, H);
-  const mid = W / 2;
   const midY = H / 2 - 4;
 
   // grid
@@ -464,45 +535,36 @@ function drawScope() {
   ctx.beginPath(); ctx.moveTo(0, midY); ctx.lineTo(W, midY); ctx.stroke();
 
   if (engine.buffer) {
-    if (!peaks) peaks = computePeaks(engine.buffer, Math.floor(mid / 3));
-    // left: original — dim
-    for (let i = 0; i < peaks.length; i++) {
-      const h = peaks[i] * H * 0.72;
-      ctx.fillStyle = "rgba(200,196,215,0.4)";
-      ctx.fillRect(i * 3, midY - h / 2, 1.7, h);
-      ctx.fillStyle = "rgba(200,196,215,0.08)";
-      ctx.fillRect(i * 3, midY + 4, 1.7, h * 0.3);
-    }
-    // right: slowed — stretched glow
-    const n2 = Math.floor((W - mid) / 4.8);
-    for (let i = 0; i < n2; i++) {
-      const p = peaks[Math.floor((i / n2) * peaks.length)] || 0;
-      const h = p * H * 0.78;
-      const g = ctx.createLinearGradient(0, midY - h / 2, 0, midY + h / 2);
-      g.addColorStop(0, "rgba(238, 224, 255, 0.98)");
-      g.addColorStop(0.5, "rgba(178, 108, 255, 0.92)");
-      g.addColorStop(1, "rgba(238, 224, 255, 0.98)");
-      ctx.fillStyle = g;
-      ctx.shadowColor = "rgba(168, 85, 247, 0.85)";
-      ctx.shadowBlur = 9;
-      ctx.fillRect(mid + 2 + i * 4.8, midY - h / 2, 1.7, h);
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = "rgba(178, 108, 255, 0.12)";
-      ctx.fillRect(mid + 2 + i * 4.8, midY + 4, 1.7, h * 0.3);
+    if (!peaks) peaks = computePeaks(engine.buffer, Math.floor(W / 3));
+    const cols = peaks.length;
+    const frac = engine.loopEnd ? trackPos() / engine.loopEnd : 0;
+    const lit = Math.floor(frac * cols);
+    for (let i = 0; i < cols; i++) {
+      const h = peaks[i] * H * 0.78;
+      const x = i * 3;
+      if (i <= lit) {
+        const g = ctx.createLinearGradient(0, midY - h / 2, 0, midY + h / 2);
+        g.addColorStop(0, "rgba(238, 224, 255, 0.98)");
+        g.addColorStop(0.5, "rgba(178, 108, 255, 0.92)");
+        g.addColorStop(1, "rgba(238, 224, 255, 0.98)");
+        ctx.fillStyle = g;
+        ctx.shadowColor = "rgba(168, 85, 247, 0.85)";
+        ctx.shadowBlur = 9;
+        ctx.fillRect(x, midY - h / 2, 1.7, h);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "rgba(178, 108, 255, 0.12)";
+        ctx.fillRect(x, midY + 4, 1.7, h * 0.3);
+      } else {
+        ctx.fillStyle = "rgba(178, 108, 255, 0.35)";
+        ctx.fillRect(x, midY - h / 2, 1.7, h);
+        ctx.fillStyle = "rgba(178, 108, 255, 0.07)";
+        ctx.fillRect(x, midY + 4, 1.7, h * 0.3);
+      }
     }
   } else {
-    // idle procedural animation
-    for (let x = 0; x < mid - 2; x += 3) {
-      const h = synthWave(0, x + offset, 0.4) * H * 0.42;
-      ctx.fillStyle = "rgba(200,196,215,0.4)";
-      ctx.fillRect(x, midY - h / 2, 1.7, h);
-      ctx.fillStyle = "rgba(200,196,215,0.08)";
-      ctx.fillRect(x, midY + 4, 1.7, h * 0.35);
-    }
-    ctx.save();
-    for (let x = mid + 2; x < W; x += 3) {
-      const sx = (x - mid) / 1.6;
-      const h = synthWave(0, sx + offset, 1) * H * 0.6;
+    // idle sweep — full width, colored
+    for (let x = 0; x < W; x += 3) {
+      const h = synthWave(0, x + offset, 0.8) * H * 0.55;
       const g = ctx.createLinearGradient(0, midY - h / 2, 0, midY + h / 2);
       g.addColorStop(0, "rgba(238, 224, 255, 0.98)");
       g.addColorStop(0.5, "rgba(178, 108, 255, 0.92)");
@@ -515,7 +577,6 @@ function drawScope() {
       ctx.fillStyle = "rgba(178, 108, 255, 0.12)";
       ctx.fillRect(x, midY + 4, 1.7, h * 0.3);
     }
-    ctx.restore();
   }
 
   if (powered && !engine.playing) offset += 2.2;
@@ -527,10 +588,8 @@ drawScope();
 const playhead = $("#playhead");
 let px = 0;
 (function tick() {
-  if (engine.playing && engine.buffer) {
-    const wetDur = engine.buffer.duration / (params.time / 100);
-    const elapsed = Math.max(0, engine.ctx.currentTime - engine.startAt);
-    px = ((elapsed % wetDur) / wetDur) * W;
+  if (engine.playing && engine.buffer && engine.loopEnd) {
+    px = (trackPos() / engine.loopEnd) * W;
   } else if (!engine.playing) {
     px = (px + 2.4) % (W + 60);
   }

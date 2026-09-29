@@ -312,7 +312,7 @@ body {
     inset 0 0 20px rgba(124, 58, 237, .07),
     0 1px 0 rgba(255,255,255,.12);
 }
-#scope { display: block; width: 100%; height: 100%; }
+#scope { display: block; width: 100%; height: 100%; touch-action: pan-y; cursor: crosshair; }
 
 .scope::after {
   content: "";
@@ -322,7 +322,6 @@ body {
   pointer-events: none;
 }
 
-.scope-label {
   position: absolute;
   top: 6px;
   font-size: 8px;
@@ -331,8 +330,8 @@ body {
   color: var(--ink-dim);
   text-shadow: 0 1px 2px rgba(0,0,0,.9);
 }
-.scope-label.left { left: 11px; }
-.scope-label.right { right: 11px; color: var(--purple-hot); text-shadow: 0 0 10px rgba(201, 167, 255, .85); }
+ left: 11px; }
+ right: 11px; color: var(--purple-hot); text-shadow: 0 0 10px rgba(201, 167, 255, .85); }
 
 .scope-split {
   position: absolute;
