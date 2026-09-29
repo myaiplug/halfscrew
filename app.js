@@ -18,7 +18,7 @@ document.querySelectorAll(".knob-wrap").forEach((wrap) => {
   const max = +wrap.dataset.max;
   const fmt = FMT[wrap.dataset.fmt];
   const ring = $(".led-ring", wrap);
-  const face = $(".knob-face", wrap);
+  const face = $(".knob-dial", wrap);
   const read = $(`#read-${wrap.dataset.knob}`);
 
   let val = +wrap.dataset.val;
@@ -69,8 +69,13 @@ document.querySelectorAll(".knob-wrap").forEach((wrap) => {
 
 const canvas = $("#scope");
 const ctx = canvas.getContext("2d");
-const W = (canvas.width = 1120);
-const H = (canvas.height = 150);
+let W = 0, H = 0;
+function fit() {
+  W = canvas.width = canvas.clientWidth || 600;
+  H = canvas.height = canvas.clientHeight || 104;
+}
+fit();
+addEventListener("resize", fit);
 
 function wave(seed, x, density) {
   // deterministic pseudo-wave, denser & higher near center
