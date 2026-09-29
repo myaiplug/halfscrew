@@ -1,4 +1,4 @@
-/* HALFSCREW — live knobs, real audio engine, scope + meter */
+/* HALFSCREW — live knobs, real audio engine, scope */
 
 const $ = (s, el = document) => el.querySelector(s);
 
@@ -489,27 +489,6 @@ let px = 0;
   requestAnimationFrame(tick);
 })();
 
-/* ── output meter — real RMS when playing ──────────────────────── */
-
-const meterFill = $("#meterFill");
-const meterData = new Uint8Array(256);
-(function bounceMeter() {
-  let level = 4;
-  if (engine.playing && engine.analyser) {
-    engine.analyser.getByteTimeDomainData(meterData);
-    let sum = 0;
-    for (let i = 0; i < meterData.length; i++) {
-      const x = (meterData[i] - 128) / 128;
-      sum += x * x;
-    }
-    const rms = Math.sqrt(sum / meterData.length);
-    level = Math.min(100, Math.pow(rms, 0.6) * 260);
-  } else if (powered) {
-    level = 46 + Math.random() * 40;
-  }
-  meterFill.style.height = `${level}%`;
-  setTimeout(bounceMeter, 120 + Math.random() * 180);
-})();
 
 /* ── power ─────────────────────────────────────────────────────── */
 

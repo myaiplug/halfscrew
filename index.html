@@ -40,54 +40,52 @@
       <span class="now" id="nowPlaying">NO TRACK LOADED · DRAG A SONG ONTO THE DISPLAY</span>
     </section>
 
-    <!-- ── single-DIN control row ─────────────────────────── -->
-    <section class="din-row">
+    <!-- ── waveform, full width ────────────────────────────── -->
+    <section class="scope" aria-label="Waveform display">
+      <canvas id="scope"></canvas>
+      <span class="scope-label left">ORIGINAL</span>
+      <span class="scope-label right">SLOWED</span>
+      <div class="scope-split"></div>
+      <div class="scope-playhead" id="playhead"></div>
+    </section>
 
-      <!-- TIME -->
-      <div class="knob-unit" data-label="TIME">
-        <span class="knob-name">TIME</span>
-        <div class="knob-wrap" data-knob="time" data-min="50" data-max="200" data-val="100" data-fmt="time">
-          <div class="led-ring"></div>
-          <div class="knob"><div class="knob-face"><div class="knob-dial"><svg viewBox="0 0 40 40"><rect x="19" y="3" width="2.2" height="11" rx="1.1" fill="#f4ecff"/><rect x="19" y="3" width="2.2" height="11" rx="1.1" fill="#c9a7ff" opacity=".55"/></svg></div></div></div>
+    <!-- ── deck: knobs together, then switches/export ──────── -->
+    <section class="deck">
+
+      <div class="knob-cluster">
+        <!-- TIME -->
+        <div class="knob-unit" data-label="TIME">
+          <span class="knob-name">TIME</span>
+          <div class="knob-wrap" data-knob="time" data-min="50" data-max="200" data-val="100" data-fmt="time">
+            <div class="led-ring"></div>
+            <div class="knob"><div class="knob-face"><div class="knob-dial"><svg viewBox="0 0 40 40"><rect x="19" y="3" width="2.2" height="11" rx="1.1" fill="#f4ecff"/><rect x="19" y="3" width="2.2" height="11" rx="1.1" fill="#c9a7ff" opacity=".55"/></svg></div></div></div>
+          </div>
+          <output class="knob-read" id="read-time">100% HALFTIME</output>
         </div>
-        <output class="knob-read" id="read-time">100% HALFTIME</output>
-      </div>
 
-      <!-- PITCH -->
-      <div class="knob-unit" data-label="PITCH">
-        <span class="knob-name">PITCH</span>
-        <div class="knob-wrap" data-knob="pitch" data-min="-12" data-max="12" data-val="0" data-fmt="pitch">
-          <div class="led-ring"></div>
-          <div class="knob"><div class="knob-face"><div class="knob-dial"><svg viewBox="0 0 40 40"><rect x="19" y="3" width="2.2" height="11" rx="1.1" fill="#f4ecff"/><rect x="19" y="3" width="2.2" height="11" rx="1.1" fill="#c9a7ff" opacity=".55"/></svg></div></div></div>
+        <!-- PITCH -->
+        <div class="knob-unit" data-label="PITCH">
+          <span class="knob-name">PITCH</span>
+          <div class="knob-wrap" data-knob="pitch" data-min="-12" data-max="12" data-val="0" data-fmt="pitch">
+            <div class="led-ring"></div>
+            <div class="knob"><div class="knob-face"><div class="knob-dial"><svg viewBox="0 0 40 40"><rect x="19" y="3" width="2.2" height="11" rx="1.1" fill="#f4ecff"/><rect x="19" y="3" width="2.2" height="11" rx="1.1" fill="#c9a7ff" opacity=".55"/></svg></div></div></div>
+          </div>
+          <output class="knob-read" id="read-pitch">0 SEMITONES</output>
         </div>
-        <output class="knob-read" id="read-pitch">0 SEMITONES</output>
-      </div>
 
-      <!-- LOOKAHEAD mini -->
-      <div class="knob-unit mini">
-        <span class="knob-name">LOOKAHEAD</span>
-        <div class="knob-wrap" data-knob="lookahead" data-min="0" data-max="20" data-val="5" data-fmt="ms">
-          <div class="led-ring"></div>
-          <div class="knob"><div class="knob-face"><div class="knob-dial"><svg viewBox="0 0 40 40"><rect x="19" y="3" width="2.2" height="11" rx="1.1" fill="#f4ecff"/><rect x="19" y="3" width="2.2" height="11" rx="1.1" fill="#c9a7ff" opacity=".55"/></svg></div></div></div>
+        <!-- LOOKAHEAD mini -->
+        <div class="knob-unit mini">
+          <span class="knob-name">LOOKAHEAD</span>
+          <div class="knob-wrap" data-knob="lookahead" data-min="0" data-max="20" data-val="5" data-fmt="ms">
+            <div class="led-ring"></div>
+            <div class="knob"><div class="knob-face"><div class="knob-dial"><svg viewBox="0 0 40 40"><rect x="19" y="3" width="2.2" height="11" rx="1.1" fill="#f4ecff"/><rect x="19" y="3" width="2.2" height="11" rx="1.1" fill="#c9a7ff" opacity=".55"/></svg></div></div></div>
+          </div>
+          <output class="knob-read" id="read-lookahead">5 MS</output>
         </div>
-        <output class="knob-read" id="read-lookahead">5 MS</output>
       </div>
 
-      <!-- scope -->
-      <div class="scope" aria-label="Waveform display">
-        <canvas id="scope"></canvas>
-        <span class="scope-label left">ORIGINAL</span>
-        <span class="scope-label right">SLOWED</span>
-        <div class="scope-split"></div>
-        <div class="scope-playhead" id="playhead"></div>
-      </div>
-
-      <!-- side rail -->
+      <!-- side rail, no meter -->
       <div class="side">
-        <div class="meter" id="meter" aria-hidden="true">
-          <div class="meter-fill" id="meterFill"></div>
-          <div class="meter-ticks"><i>0</i><i>-6</i><i>-12</i><i>-18</i><i>-24</i></div>
-        </div>
         <div class="rail-col">
           <label class="switch"><input type="checkbox" id="sw-hq" checked><span class="pill"></span><span class="sw-name">HQ PROCESSING</span></label>
           <label class="switch"><input type="checkbox" id="sw-lowend" checked><span class="pill"></span><span class="sw-name">LOW-END PROTECT</span></label>
