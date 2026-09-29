@@ -89,27 +89,59 @@ let powered = true;
 
 function drawScope() {
   ctx.clearRect(0, 0, W, H);
-
   const mid = W / 2;
+  const midY = H / 2 - 6;
 
-  // left: original — dim white
-  for (let x = 0; x < mid; x += 3) {
-    const h = wave(0, x + offset, 0.4) * H * 0.42;
-    ctx.fillStyle = "rgba(190,185,205,0.32)";
-    ctx.fillRect(x, mid - h / 2 > 0 ? mid - h / 2 : 0, 1.6, h);
+  // grid
+  ctx.strokeStyle = "rgba(124, 58, 237, 0.12)";
+  ctx.lineWidth = 1;
+  for (let gx = 20; gx < W; gx += 56) {
+    ctx.beginPath();
+    ctx.moveTo(gx, 0);
+    ctx.lineTo(gx, H);
+    ctx.stroke();
+  }
+  for (let gy = 16; gy < H; gy += 24) {
+    ctx.beginPath();
+    ctx.moveTo(0, gy);
+    ctx.lineTo(W, gy);
+    ctx.stroke();
+  }
+  // center axis
+  ctx.strokeStyle = "rgba(190, 185, 205, 0.18)";
+  ctx.beginPath();
+  ctx.moveTo(0, midY);
+  ctx.lineTo(W, midY);
+  ctx.stroke();
+
+  // left: original — dim white bars + soft reflection
+  for (let x = 0; x < mid - 2; x += 3) {
+    const h = wave(0, x + offset, 0.4) * H * 0.4;
+    ctx.fillStyle = "rgba(200,196,215,0.4)";
+    ctx.fillRect(x, midY - h / 2, 1.7, h);
+    // reflection under axis
+    ctx.fillStyle = "rgba(200,196,215,0.08)";
+    ctx.fillRect(x, midY + 6, 1.7, h * 0.35);
   }
 
-  // right: slowed — purple, stretched
-  for (let x = mid; x < W; x += 3) {
-    const sx = (x - mid) / 1.6; // stretched = slowed
-    const h = wave(0, sx + offset, 1) * H * 0.6;
-    const g = ctx.createLinearGradient(0, mid - h / 2, 0, mid + h / 2);
-    g.addColorStop(0, "rgba(201,167,255,0.95)");
-    g.addColorStop(0.5, "rgba(168,85,247,0.9)");
-    g.addColorStop(1, "rgba(201,167,255,0.95)");
+  // right: slowed — purple, stretched, glowing, with reflection
+  ctx.save();
+  for (let x = mid + 2; x < W; x += 3) {
+    const sx = (x - mid) / 1.6;
+    const h = wave(0, sx + offset, 1) * H * 0.58;
+    const g = ctx.createLinearGradient(0, midY - h / 2, 0, midY + h / 2);
+    g.addColorStop(0, "rgba(238, 224, 255, 0.98)");
+    g.addColorStop(0.5, "rgba(178, 108, 255, 0.92)");
+    g.addColorStop(1, "rgba(238, 224, 255, 0.98)");
     ctx.fillStyle = g;
-    ctx.fillRect(x, mid - h / 2, 1.6, h);
+    ctx.shadowColor = "rgba(168, 85, 247, 0.85)";
+    ctx.shadowBlur = 9;
+    ctx.fillRect(x, midY - h / 2, 1.7, h);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "rgba(178, 108, 255, 0.12)";
+    ctx.fillRect(x, midY + 6, 1.7, h * 0.3);
   }
+  ctx.restore();
 
   if (powered) offset += 2.2;
   requestAnimationFrame(drawScope);
