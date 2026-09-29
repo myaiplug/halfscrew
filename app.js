@@ -377,7 +377,7 @@ scopeEl.addEventListener("drop", (e) => {
 
 function seekAt(clientX) {
   if (!engine.buffer) return;
-  const r = canvas.getBoundingClientRect();
+  const r = scopeEl.getBoundingClientRect();
   const f = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
   const wasPlaying = engine.playing;
   startPlayback(f * (engine.buffer.__loopEnd || engine.buffer.duration));
@@ -385,14 +385,14 @@ function seekAt(clientX) {
 }
 
 let scrubbing = false, lastScrub = 0;
-canvas.addEventListener("pointerdown", (e) => {
+scopeEl.addEventListener("pointerdown", (e) => {
   if (!engine.buffer) return;
   scrubbing = true;
-  try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+  try { scopeEl.setPointerCapture(e.pointerId); } catch (_) {}
   seekAt(e.clientX);
   scrubHint();
 });
-canvas.addEventListener("pointermove", (e) => {
+scopeEl.addEventListener("pointermove", (e) => {
   if (!scrubbing) return;
   const now = performance.now();
   if (now - lastScrub < 90) return;
@@ -401,7 +401,7 @@ canvas.addEventListener("pointermove", (e) => {
   scrubHint();
 });
 ["pointerup", "pointercancel"].forEach((ev) =>
-  canvas.addEventListener(ev, (e) => {
+  scopeEl.addEventListener(ev, (e) => {
     if (!scrubbing) return;
     scrubbing = false;
     seekAt(e.clientX);
