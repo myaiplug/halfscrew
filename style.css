@@ -168,7 +168,7 @@ body {
 .knob-cluster {
   display: flex;
   align-items: center;
-  gap: 26px;
+  gap: clamp(14px, 3vw, 40px);
 }
 
 .knob-unit {
@@ -179,27 +179,39 @@ body {
 }
 
 .knob-name {
-  font-size: 8.5px;
+  font-size: clamp(9px, 1.4vw, 12px);
   font-weight: 700;
-  letter-spacing: .3em;
+  letter-spacing: .34em;
   color: var(--ink);
-  text-shadow: 0 1px 0 #000;
+  text-shadow: 0 1px 0 #000, 0 0 10px rgba(201,167,255,.25);
 }
 
 .knob-wrap {
   position: relative;
-  width: 78px;
-  height: 78px;
+  width: clamp(148px, 23vw, 216px);
+  height: clamp(148px, 23vw, 216px);
   cursor: ns-resize;
   touch-action: none;
   user-select: none;
-  filter: drop-shadow(0 7px 10px rgba(0,0,0,.8));
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,.85));
 }
-.knob-unit.mini .knob-wrap { width: 62px; height: 62px; }
+/* purple neon halo radiating from under the knob */
+.knob-wrap::before {
+  content: "";
+  position: absolute;
+  inset: -16%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(168,85,247,.42) 30%, rgba(124,58,237,.16) 58%, transparent 72%);
+  filter: blur(14px);
+  z-index: 0;
+  pointer-events: none;
+}
+.knob-unit.mini .knob-wrap { width: clamp(84px, 12vw, 104px); height: clamp(84px, 12vw, 104px); }
 
 .led-ring {
   position: absolute;
   inset: 0;
+  z-index: 2;
   border-radius: 50%;
   background: conic-gradient(from 220deg, var(--purple) 0deg, var(--purple-hot) var(--arc, 108deg), #241b33 var(--arc, 108deg), #161020 360deg);
   -webkit-mask: radial-gradient(circle, transparent 67%, #000 69%);
@@ -212,16 +224,17 @@ body {
 
 .knob {
   position: absolute;
-  inset: 7px;
+  inset: 6%;
   border-radius: 50%;
-  /* knurled bezel */
-  background: repeating-conic-gradient(#15151b 0deg 4deg, #4d4d58 4deg 8deg);
+  z-index: 1;
+  /* fine radial grip teeth — machined knurl */
+  background: repeating-conic-gradient(#0e0e13 0deg 1.5deg, #585865 1.5deg 3deg);
   box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,.35),
-    inset 0 2px 4px rgba(255,255,255,.35),
-    inset 0 -3px 6px rgba(0,0,0,.9),
-    0 5px 10px rgba(0,0,0,.85);
-  padding: 4px;
+    inset 0 0 0 1px rgba(255,255,255,.38),
+    inset 0 3px 5px rgba(255,255,255,.32),
+    inset 0 -4px 8px rgba(0,0,0,.92),
+    0 8px 16px rgba(0,0,0,.9);
+  padding: clamp(6px, 1.1vw, 13px);
 }
 
 .knob-face {
@@ -246,16 +259,22 @@ body {
   content: "";
   position: absolute;
   inset: -40%;
-  background: conic-gradient(
-    from 20deg,
-    rgba(255,255,255,0) 0deg,
-    rgba(255,255,255,.22) 38deg,
-    rgba(255,255,255,0) 70deg,
-    rgba(255,255,255,0) 160deg,
-    rgba(255,255,255,.13) 205deg,
-    rgba(255,255,255,0) 240deg,
-    rgba(255,255,255,.28) 330deg,
-    rgba(255,255,255,0) 360deg);
+  /* starburst polish — bright machined spokes */
+  background:
+    conic-gradient(
+      from 20deg,
+      rgba(255,255,255,0) 0deg,
+      rgba(255,255,255,.3) 38deg,
+      rgba(255,255,255,0) 70deg,
+      rgba(255,255,255,0) 160deg,
+      rgba(255,255,255,.17) 205deg,
+      rgba(255,255,255,0) 240deg,
+      rgba(255,255,255,.36) 330deg,
+      rgba(255,255,255,0) 360deg),
+    repeating-conic-gradient(
+      from 0deg,
+      rgba(255,255,255,.05) 0deg 3deg,
+      rgba(0,0,0,.05) 3deg 6deg);
   mix-blend-mode: screen;
 }
 
@@ -277,13 +296,13 @@ body {
   display: grid;
   place-items: center;
 }
-.knob-dial svg { width: 100%; height: 100%; }
+.knob-dial svg { width: 100%; height: 100%; filter: drop-shadow(0 0 5px rgba(201,167,255,.9)) drop-shadow(0 0 12px rgba(168,85,247,.6)); }
 
 .knob-wrap:hover .led-ring { filter: drop-shadow(0 0 14px rgba(168,85,247,1)) drop-shadow(0 0 36px rgba(124,58,237,.65)); }
 .knob-wrap.dragging .led-ring { filter: drop-shadow(0 0 20px rgba(201,167,255,1)) drop-shadow(0 0 48px rgba(168,85,247,.8)); }
 
 .knob-read {
-  font-size: 8px;
+  font-size: clamp(8.5px, 1.2vw, 10.5px);
   font-weight: 700;
   letter-spacing: .16em;
   color: var(--purple-hot);
@@ -295,6 +314,26 @@ body {
   white-space: nowrap;
   text-shadow: 0 0 8px rgba(201,167,255,.6);
 }
+
+/* ── HS badge between the big knobs ──────────────────────────────── */
+
+.hsbadge {
+  flex: 0 0 auto;
+  width: clamp(46px, 7.5vw, 72px);
+  height: clamp(46px, 7.5vw, 72px);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 3px solid #17171d;
+  background: radial-gradient(circle at 34% 26%, #fff 0%, #d8d8e2 16%, #90909b 40%, #3a3a42 66%, #0e0e12 100%);
+  box-shadow:
+    inset 0 2px 3px rgba(255,255,255,.9),
+    inset 0 -5px 9px rgba(0,0,0,.85),
+    inset 0 0 0 1px rgba(0,0,0,.8),
+    0 5px 12px rgba(0,0,0,.75),
+    0 0 18px rgba(124,58,237,.35);
+}
+.hsbadge svg { width: 52%; height: 52%; filter: drop-shadow(0 0 6px rgba(139,92,246,.8)); }
 
 /* ── scope ───────────────────────────────────────────────────────── */
 
@@ -475,7 +514,8 @@ body {
 
 @media (max-width: 560px) {
   .deck { flex-direction: column; gap: 14px; }
-  .knob-cluster { flex-wrap: wrap; justify-content: center; }
+  .hsbadge { display: none; }
+  .knob-cluster { flex-wrap: wrap; justify-content: center; gap: 12px; }
   .side { border-left: none; padding-left: 0; justify-content: center; }
   .strip { flex-wrap: wrap; white-space: normal; }
   .logo-text h1 { font-size: 22px; }
