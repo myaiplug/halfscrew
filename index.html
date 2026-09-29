@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HALFSCREW — The Slow Motion Potion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="stage">
+  <div class="plugin" id="plugin">
+
+    <!-- ── header ─────────────────────────────────────────── -->
+    <header class="plug-head">
+      <div class="logo-block">
+        <svg class="crown" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.5 6.5 12 12 5l5.5 7L22 8.5V19a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1Z" fill="none" stroke="#c9a7ff" stroke-width="1.6" stroke-linejoin="round"/><circle cx="3" cy="7.2" r="1.3" fill="#c9a7ff"/><circle cx="12" cy="4" r="1.3" fill="#c9a7ff"/><circle cx="21" cy="7.2" r="1.3" fill="#c9a7ff"/></svg>
+        <h1>HALF<span>SCREW</span></h1>
+        <p class="tag">THE SLOW MOTION POTION</p>
+      </div>
+      <div class="head-tools">
+        <button class="tool" title="Waveform view"><svg viewBox="0 0 24 24"><path d="M2 12h2l2-7 3 14 3-9 2 4h2l2-2h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></button>
+        <button class="tool" title="Play preview"><svg viewBox="0 0 24 24"><path d="M7 5v14l12-7z" fill="currentColor"/></svg></button>
+        <button class="tool" title="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+        <button class="tool power on" id="powerBtn" title="Power"><svg viewBox="0 0 24 24"><path d="M12 3v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7.2 6.4a7 7 0 1 0 9.6 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+      </div>
+    </header>
+
+    <!-- ── waveform display ───────────────────────────────── -->
+    <section class="scope" aria-label="Waveform display">
+      <canvas id="scope" width="1120" height="150"></canvas>
+      <span class="scope-label left">ORIGINAL</span>
+      <span class="scope-label right">SLOWED</span>
+      <div class="scope-split" id="scopeSplit"></div>
+      <div class="scope-playhead" id="playhead"></div>
+    </section>
+
+    <!-- ── main deck ──────────────────────────────────────── -->
+    <section class="deck">
+
+      <!-- TIME knob -->
+      <div class="knob-unit">
+        <span class="knob-name">TIME</span>
+        <div class="knob-wrap" data-knob="time" data-min="50" data-max="200" data-val="100" data-fmt="time">
+          <div class="led-ring" id="ring-time"></div>
+          <div class="knob">
+            <svg viewBox="0 0 40 40" class="knob-face"><circle cx="20" cy="20" r="17" fill="url(#knobGrad)"/><defs><radialGradient id="knobGrad" cx="35%" cy="30%"><stop offset="0%" stop-color="#5a5a66"/><stop offset="55%" stop-color="#232329"/><stop offset="100%" stop-color="#101014"/></radialGradient></defs><rect x="19.2" y="3.5" width="1.6" height="9" rx=".8" fill="#c9a7ff"/></svg>
+          </div>
+        </div>
+        <div class="knob-range"><span>50%</span><span>200%</span></div>
+        <output class="knob-read" id="read-time">100% HALFTIME</output>
+      </div>
+
+      <!-- HS emblem -->
+      <div class="emblem" aria-hidden="true">
+        <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="29" fill="#0b0b10" stroke="#2a2a35" stroke-width="2"/><path d="M22 42V22h8.4c3.9 0 6.6 2.2 6.6 5.6 0 2.4-1.4 4.2-3.6 5 3 .7 4.9 2.8 4.9 5.9 0 3.9-3 6.5-7.7 6.5Zm4.3-11.5h3.5c1.9 0 3.1-1 3.1-2.6s-1.1-2.5-3-2.5h-3.6Zm0 8.2h4.1c2.2 0 3.5-1.1 3.5-2.9s-1.3-2.8-3.6-2.8h-4Z" fill="#c9a7ff"/><path d="M46 24l-6 16" stroke="#c9a7ff" stroke-width="3.4" stroke-linecap="round"/></svg>
+      </div>
+
+      <!-- PITCH knob -->
+      <div class="knob-unit">
+        <span class="knob-name">PITCH</span>
+        <div class="knob-wrap" data-knob="pitch" data-min="-12" data-max="12" data-val="0" data-fmt="pitch">
+          <div class="led-ring" id="ring-pitch"></div>
+          <div class="knob">
+            <svg viewBox="0 0 40 40" class="knob-face"><use href="#"/><circle cx="20" cy="20" r="17" fill="url(#knobGrad)"/><rect x="19.2" y="3.5" width="1.6" height="9" rx=".8" fill="#c9a7ff"/></svg>
+          </div>
+        </div>
+        <div class="knob-range"><span>-12</span><span>+12</span></div>
+        <output class="knob-read" id="read-pitch">0 SEMITONES</output>
+      </div>
+
+      <!-- OUTPUT meter + switches -->
+      <div class="side-rail">
+        <div class="meter-block">
+          <span class="knob-name">OUTPUT</span>
+          <div class="meter" id="meter" aria-hidden="true">
+            <div class="meter-fill" id="meterFill"></div>
+            <div class="meter-ticks">
+              <i>0</i><i>-6</i><i>-12</i><i>-18</i><i>-24</i>
+            </div>
+          </div>
+        </div>
+        <div class="switch-stack">
+          <label class="switch"><input type="checkbox" id="sw-hq" checked><span class="pill"></span><span class="sw-name">HQ PROCESSING</span></label>
+          <label class="switch"><input type="checkbox" id="sw-lowend" checked><span class="pill"></span><span class="sw-name">LOW-END PROTECT</span></label>
+          <label class="switch"><input type="checkbox" id="sw-rubber"><span class="pill"></span><span class="sw-name">RUBBER BAND HQ</span></label>
+          <div class="mix-row">
+            <span class="sw-name">DRY / WET</span>
+            <input type="range" id="mix" min="0" max="100" value="100" aria-label="Dry wet mix">
+            <output id="mix-read">100</output>
+          </div>
+        </div>
+        <div class="knob-unit mini">
+          <span class="knob-name">LOOKAHEAD</span>
+          <div class="knob-wrap" data-knob="lookahead" data-min="0" data-max="20" data-val="5" data-fmt="ms">
+            <div class="led-ring" id="ring-lookahead"></div>
+            <div class="knob">
+              <svg viewBox="0 0 40 40" class="knob-face"><circle cx="20" cy="20" r="17" fill="url(#knobGrad)"/><rect x="19.2" y="3.5" width="1.6" height="9" rx=".8" fill="#c9a7ff"/></svg>
+            </div>
+          </div>
+          <div class="knob-range"><span>0</span><span>20</span></div>
+          <output class="knob-read" id="read-lookahead">5 MS</output>
+        </div>
+        <button class="export" id="exportBtn">
+          <svg viewBox="0 0 24 24"><path d="M12 3v11m0 0 4.5-4.5M12 14 7.5 9.5M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          EXPORT
+        </button>
+      </div>
+    </section>
+
+    <!-- ── feature strip ──────────────────────────────────── -->
+    <footer class="strip">
+      <div class="feat"><svg viewBox="0 0 24 24"><path d="M12 3v10m0 0 3.5-3.5M12 13 8.5 9.5M5 16v3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>ANY SONG DRAG &amp; DROP</span></div>
+      <div class="feat"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.4"/><circle cx="16" cy="12" r="4.4"/></svg><span>HALFTIME PERFECT SLOW DOWN</span></div>
+      <div class="feat"><svg viewBox="0 0 24 24"><path d="M3 12h3l2-6 3 12 2.5-9 1.5 3H21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>DEEP LOW-END PRESERVATION</span></div>
+      <div class="feat"><svg viewBox="0 0 24 24"><path d="M4 18c4-2 4-12 8-12 3 0 3 4 8 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>HIGH QUALITY RUBBER BAND HQ</span></div>
+      <div class="feat"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span>INSTANT PROCESSING</span></div>
+      <div class="feat"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>WINDOWS MAC LINUX COMPATIBLE</span></div>
+    </footer>
+
+    <!-- screw corners -->
+    <i class="screw tl"></i><i class="screw tr"></i><i class="screw bl"></i><i class="screw br"></i>
+  </div>
+  <p class="hint">drag the knobs · flip the switches · it's live</p>
+</main>
+<svg width="0" height="0" style="position:absolute"><defs><radialGradient id="knobGrad2" cx="35%" cy="30%"><stop offset="0%" stop-color="#5a5a66"/><stop offset="55%" stop-color="#232329"/><stop offset="100%" stop-color="#101014"/></radialGradient></defs></svg>
+<script src="app.js"></script>
+</body>
+</html>
