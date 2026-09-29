@@ -2,6 +2,15 @@
 
 const $ = (s, el = document) => el.querySelector(s);
 
+/* ── surface any runtime error on the display ────────────────────── */
+
+function showErr(err) {
+  const np = document.getElementById("nowPlaying");
+  if (np) np.textContent = "ERROR · " + ((err && (err.message || err)) || "unknown").toString().slice(0, 60);
+}
+window.addEventListener("error", (e) => showErr(e.message || e.error));
+window.addEventListener("unhandledrejection", (e) => showErr(e.reason));
+
 /* ── shared parameter state ───────────────────────────────────── */
 
 const params = { time: 100, pitch: 0, lookahead: 5, mix: 100 };
@@ -66,7 +75,7 @@ document.querySelectorAll(".knob-wrap").forEach((wrap) => {
 const engine = {
   ctx: null, buffer: null, trackName: "",
   dry: null, wet: null, dryGain: null, wetGain: null,
-  master: null, analyser: null, playing: false, startAt: 0,
+  master: null, analyser: null, playing: false, paused: false, startAt: 0,
 };
 
 function ensureCtx() {
@@ -137,13 +146,24 @@ function startPlayback() {
   engine.playing = true;
 }
 
+function armWake() {
+  if (engine.ctx && engine.ctx.state === "suspended") {
+    document.addEventListener("pointerdown", function wake() {
+      document.removeEventListener("pointerdown", wake);
+      if (engine.ctx && engine.ctx.state === "suspended") engine.ctx.resume();
+    });
+  }
+}
+
 function setTrack(buffer, name) {
   engine.buffer = buffer;
   engine.trackName = name;
+  engine.paused = false;
   peaks = null;
   $("#nowPlaying").textContent = `NOW PLAYING · ${name}`;
   document.querySelectorAll(".chip").forEach((c) => c.classList.remove("active"));
   startPlayback();
+  playBtn.innerHTML = engine.playing ? ICON_PAUSE : ICON_PLAY;
 }
 
 /* ── demo beats — synthesized in-browser, Prod. TheBeatMob ──────── */
@@ -269,10 +289,16 @@ function renderDemo(spec) {
 }
 
 async function loadDemo(key) {
+  ensureCtx(); // inside the click gesture — keeps autoplay legal on mobile
   const spec = DEMOS[key];
-  if (!DEMO_CACHE[key]) DEMO_CACHE[key] = await renderDemo(spec);
-  setTrack(DEMO_CACHE[key], `${spec.name} · Prod. TheBeatMob`);
-  $(`#demo-${key}`).classList.add("active");
+  try {
+    if (!DEMO_CACHE[key]) DEMO_CACHE[key] = await renderDemo(spec);
+    setTrack(DEMO_CACHE[key], `${spec.name} · Prod.TheBeatMob`);
+    $(`#demo-${key}`).classList.add("active");
+    armWake();
+  } catch (err) {
+    showErr(err);
+  }
 }
 
 $("#demo-frostbite").addEventListener("click", () => loadDemo("frostbite"));
@@ -286,6 +312,8 @@ async function loadUserFile(file) {
   try {
     const buf = await ctx.decodeAudioData(data);
     setTrack(buf, file.name.replace(/\.[^.]+$/, "").toUpperCase().slice(0, 28));
+    $("#loadChip").classList.add("active");
+    armWake();
   } catch (_) {
     $("#nowPlaying").textContent = "COULDN'T DECODE THAT FILE · TRY MP3 / WAV / M4A";
   }
@@ -490,11 +518,41 @@ let px = 0;
 })();
 
 
+/* ── play/pause ─────────────────────────────────────────────────── */
+
+const playBtn = document.querySelector('.tool[title="Play preview"]');
+const ICON_PLAY = '<svg viewBox="0 0 24 24"><path d="M7 5v14l12-7z" fill="currentColor"/></svg>';
+const ICON_PAUSE = '<svg viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor"/></svg>';
+
+playBtn.addEventListener("click", () => {
+  if (!engine.ctx || !engine.buffer) {
+    $("#nowPlaying").textContent = "PICK A TRACK FIRST · FROSTBITE, LATE NIGHT, OR LOAD YOUR OWN";
+    return;
+  }
+  if (engine.playing && engine.ctx.state === "running") {
+    engine.ctx.suspend();
+    engine.paused = true;
+    playBtn.innerHTML = ICON_PLAY;
+    $("#nowPlaying").textContent = `PAUSED · ${engine.trackName}`;
+  } else if (engine.ctx.state === "suspended") {
+    engine.ctx.resume();
+    engine.paused = false;
+    playBtn.innerHTML = ICON_PAUSE;
+    $("#nowPlaying").textContent = `NOW PLAYING · ${engine.trackName}`;
+  } else if (!engine.playing) {
+    startPlayback();
+    playBtn.innerHTML = ICON_PAUSE;
+  }
+  armWake();
+});
+
 /* ── power ─────────────────────────────────────────────────────── */
 
 $("#powerBtn").addEventListener("click", function () {
   powered = !powered;
   this.classList.toggle("on", powered);
+  if (!powered) playBtn.innerHTML = ICON_PLAY;
+  else if (engine.playing) playBtn.innerHTML = ICON_PAUSE;
   document.getElementById("plugin").style.filter = powered ? "" : "saturate(0.35) brightness(0.65)";
   if (!powered && engine.playing) {
     stopPlayback();
