@@ -502,7 +502,7 @@ function synthWave(seed, x, density) {
   const a =
     Math.sin(tt) * 0.35 + Math.sin(tt * 2.3 + 1.7) * 0.25 +
     Math.sin(tt * 4.7 + 0.4) * 0.18 + Math.sin(tt * 9.1 + 2.2) * 0.09;
-  const env = Math.pow(Math.sin(x / W * Math.PI), 0.35) * (0.75 + density * 0.45);
+  const env = Math.pow(Math.max(0, Math.sin(x / W * Math.PI)), 0.35) * (0.75 + density * 0.45);
   return Math.abs(a) * env;
 }
 
@@ -565,6 +565,7 @@ function drawScope() {
     // idle sweep — full width, colored
     for (let x = 0; x < W; x += 3) {
       const h = synthWave(0, x + offset, 0.8) * H * 0.55;
+      if (!(h > 0.4)) continue;
       const g = ctx.createLinearGradient(0, midY - h / 2, 0, midY + h / 2);
       g.addColorStop(0, "rgba(238, 224, 255, 0.98)");
       g.addColorStop(0.5, "rgba(178, 108, 255, 0.92)");
