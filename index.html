@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=23">
+<link rel="stylesheet" href="style.css?v=24">
 </head>
 <body>
 <script>if(window.parent!==window)document.body.classList.add("in-frame");</script>
@@ -120,6 +120,73 @@
   <p class="hint">tap the wave to jump · drag it to scan · drop a song on the display · export the screwed wav</p>
 </main>
 <script>window.OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;</script>
-<script src="halfscrew.js?v=23"></script>
+<script src="halfscrew.js?v=24"></script>
+
+<script>
+window.OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+window.addEventListener("load", function () {
+  var btn = document.getElementById("exportBtn");
+  if (!btn) return;
+  var fresh = btn.cloneNode(true);
+  btn.parentNode.replaceChild(fresh, btn);
+  fresh.addEventListener("click", async function () {
+    var note = document.getElementById("nowPlaying");
+    var eng = window.engine;
+    if (!eng || !eng.buffer) {
+      if (note) note.textContent = "LOAD A TRACK FIRST · THEN EXPORT THE SCREWED WAV";
+      return;
+    }
+    if (note) note.textContent = "RENDERING SCREWED WAV…";
+    var params = window.params || { time: 100, pitch: 0, lookahead: 5, mix: 100 };
+    var rate = Math.max(0.5, Math.min(2, params.time / 100));
+    var cents = Math.round(params.pitch) * 100;
+    var src = eng.buffer;
+    var ratio = rate * Math.pow(2, cents / 1200);
+    var rendered;
+    try {
+      var Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      var outLen = Math.max(1, Math.ceil(src.length / ratio));
+      var off = new Ctx(src.numberOfChannels, outLen, src.sampleRate);
+      var s = off.createBufferSource();
+      s.buffer = src;
+      s.playbackRate.value = rate;
+      s.detune.value = cents;
+      s.connect(off.destination);
+      s.start(0);
+      rendered = await off.startRendering();
+    } catch (err) {
+      if (note) note.textContent = "EXPORT FAILED · " + (err && err.message ? err.message : err);
+      return;
+    }
+    var ch = rendered.numberOfChannels, sr = rendered.sampleRate, len = rendered.length;
+    var ab = new ArrayBuffer(44 + len * ch * 2);
+    var v = new DataView(ab);
+    var w = function (o, str) { for (var i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i)); };
+    w(0, "RIFF"); v.setUint32(4, 36 + len * ch * 2, true); w(8, "WAVE");
+    w(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+    v.setUint16(22, ch, true); v.setUint32(24, sr, true);
+    v.setUint32(28, sr * ch * 2, true); v.setUint16(32, ch * 2, true);
+    v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, len * ch * 2, true);
+    var o = 44;
+    for (var i = 0; i < len; i++) {
+      for (var c = 0; c < ch; c++) {
+        var x = Math.max(-1, Math.min(1, rendered.getChannelData(c)[i]));
+        v.setInt16(o, x < 0 ? x * 0x8000 : x * 0x7fff, true);
+        o += 2;
+      }
+    }
+    var base = (eng.trackName || "track").split(" ·")[0].replace(/\.[a-z0-9]+$/i, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "track";
+    var name = base + "-HalfScrew-t" + Math.round(params.time) + "-p" + Math.round(params.pitch) + "-la" + Math.round(params.lookahead) + "-mix" + Math.round(params.mix) + ".wav";
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([ab], { type: "audio/wav" }));
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    if (note) note.textContent = "EXPORTED · " + name;
+  });
+});
+</script>
+
 </body>
 </html>
