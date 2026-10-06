@@ -173,14 +173,25 @@ body {
 }
 
 .knob-cluster {
-  display: flex;
+  --big: clamp(148px, 23vw, 216px);
+  --mini: clamp(72px, 11vw, 96px);
+  /* tangent clearance: halo is 16% past the rim, keep a chrome gap after that */
+  --gap: clamp(12px, 1.6vw, 22px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-rows: auto var(--big) auto;
+  justify-items: center;
   align-items: center;
-  justify-content: center;
-  flex-wrap: nowrap;
-  gap: clamp(10px, 2.4vw, 36px);
+  column-gap: var(--gap);
   width: 100%;
 }
-.knob-unit.mini { flex: 0 0 auto; align-self: center; }
+.knob-unit { display: contents; }
+.knob-unit:nth-child(1) > * { grid-column: 1; }
+.knob-unit:nth-child(2) > * { grid-column: 2; }
+.knob-unit:nth-child(3) > * { grid-column: 3; }
+.knob-unit .knob-name { grid-row: 1; }
+.knob-unit .knob-wrap { grid-row: 2; align-self: center; }
+.knob-unit .knob-read { grid-row: 3; }
 
 .knob-unit {
   display: flex;
@@ -199,8 +210,8 @@ body {
 
 .knob-wrap {
   position: relative;
-  width: clamp(148px, 23vw, 216px);
-  height: clamp(148px, 23vw, 216px);
+  width: var(--big, clamp(148px, 23vw, 216px));
+  height: var(--big, clamp(148px, 23vw, 216px));
   cursor: ns-resize;
   touch-action: none;
   user-select: none;
@@ -217,7 +228,7 @@ body {
   z-index: 0;
   pointer-events: none;
 }
-.knob-unit.mini .knob-wrap { width: clamp(84px, 12vw, 104px); height: clamp(84px, 12vw, 104px); }
+.knob-unit.mini .knob-wrap { width: var(--mini, 88px); height: var(--mini, 88px); }
 
 .led-ring {
   position: absolute;
@@ -558,8 +569,8 @@ body {
 @media (max-width: 560px) {
   .deck { flex-direction: column; gap: 14px; }
   .hsbadge { display: none; }
-  .knob-unit.mini .knob-wrap { width: 64px; height: 64px; }
-  .knob-cluster { flex-wrap: nowrap; justify-content: center; gap: 8px; }
+  .knob-unit.mini .knob-wrap { width: 62px; height: 62px; }
+  .knob-cluster { --big: clamp(108px, 30vw, 150px); --mini: 62px; --gap: 8px; }
   .logo-text h1 { font-size: 22px; }
   .tag { letter-spacing: .28em; }
   .plug-head { gap: 10px; }
