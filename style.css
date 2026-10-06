@@ -683,3 +683,21 @@ body.in-frame .plugin { width: 100%; }
   .head-side { width: 100%; align-items: flex-end; }
   .foot-line { flex-wrap: wrap; justify-content: center; }
 }
+
+.transport { display:flex; gap:6px; align-items:center; }
+.play-main {
+  padding: 5px 12px;
+  font-size: 8px;
+  letter-spacing: .2em;
+  font-weight: 800;
+  color: #1a0b26;
+  background: linear-gradient(180deg, #f4ecff, #c9a7ff 55%, #7c3aed);
+  border: 1px solid #000;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.play-main:active { transform: translateY(1px); }
+@media (max-width: 700px) {
+  .transport { width: 100%; }
+  .play-main, .head-side .export { flex: 1; text-align: center; }
+}
