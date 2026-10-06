@@ -1,3 +1,4 @@
+window.OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
 /* HALFSCREW — live knobs, real audio engine, scope */
 
 const $ = (s, el = document) => el.querySelector(s);
