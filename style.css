@@ -206,6 +206,8 @@ body {
   pointer-events: none;
 }
 .knob-unit.mini .knob-wrap { pointer-events: auto; }
+.knob-unit.mini .knob-name,
+.knob-unit.mini .knob-read { margin-top: 2px; }
 
 .knob-unit {
   display: flex;
