@@ -175,8 +175,12 @@ body {
 .knob-cluster {
   display: flex;
   align-items: center;
-  gap: clamp(14px, 3vw, 40px);
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: clamp(10px, 2.4vw, 36px);
+  width: 100%;
 }
+.knob-unit.mini { flex: 0 0 auto; align-self: center; }
 
 .knob-unit {
   display: flex;
@@ -554,7 +558,8 @@ body {
 @media (max-width: 560px) {
   .deck { flex-direction: column; gap: 14px; }
   .hsbadge { display: none; }
-  .knob-cluster { flex-wrap: wrap; justify-content: center; gap: 12px; }
+  .knob-unit.mini .knob-wrap { width: 64px; height: 64px; }
+  .knob-cluster { flex-wrap: nowrap; justify-content: center; gap: 8px; }
   .logo-text h1 { font-size: 22px; }
   .tag { letter-spacing: .28em; }
   .plug-head { gap: 10px; }
