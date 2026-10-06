@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=15">
+<link rel="stylesheet" href="style.css?v=16">
 </head>
 <body>
 <main class="stage">
@@ -85,14 +85,16 @@
     <!-- ── micro strip ─────────────────────────────────────── -->
     <footer class="strip">
       <div class="foot-controls">
-        <label class="switch"><input type="checkbox" id="sw-hq" checked><span class="pill"></span><span class="sw-name">HQ</span></label>
-        <i class="sep" aria-hidden="true"></i>
-        <label class="switch"><input type="checkbox" id="sw-lowend" checked><span class="pill"></span><span class="sw-name">LOW-END</span></label>
-        <label class="switch"><input type="checkbox" id="sw-rubber"><span class="pill"></span><span class="sw-name">RUBBER</span></label>
-        <div class="mix-row">
-          <span class="sw-name">DRY/WET</span>
-          <input type="range" id="mix" min="0" max="100" value="100" aria-label="Dry wet mix">
-          <output id="mix-read">100</output>
+        <div class="foot-line">
+          <label class="switch"><input type="checkbox" id="sw-hq" checked><span class="pill"></span><span class="sw-name">HQ</span></label>
+          <i class="sep" aria-hidden="true"></i>
+          <label class="switch"><input type="checkbox" id="sw-lowend" checked><span class="pill"></span><span class="sw-name">LOW-END</span></label>
+          <label class="switch"><input type="checkbox" id="sw-rubber"><span class="pill"></span><span class="sw-name">RUBBER</span></label>
+          <div class="mix-row">
+            <span class="sw-name">DRY/WET</span>
+            <input type="range" id="mix" min="0" max="100" value="100" aria-label="Dry wet mix">
+            <output id="mix-read">100</output>
+          </div>
         </div>
         <button class="export" id="exportBtn">
           <svg viewBox="0 0 24 24"><path d="M12 3v11m0 0 4.5-4.5M12 14 7.5 9.5M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -113,6 +115,6 @@
   </div>
   <p class="hint">tap the wave to jump · drag it to scan · drop a song on the display · export the screwed wav</p>
 </main>
-<script src="app.js?v=15"></script>
+<script src="app.js?v=16"></script>
 </body>
 </html>
