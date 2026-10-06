@@ -14,8 +14,8 @@ window.addEventListener("unhandledrejection", (e) => showErr(e.reason));
 
 /* ── shared parameter state ───────────────────────────────────── */
 
-const params = { time: 100, pitch: 0, lookahead: 5, mix: 100 };
-const engine = {
+window.params = { time: 100, pitch: 0, lookahead: 5, mix: 100 };
+window.engine = {
   ctx: null, buffer: null, trackName: "",
   dry: null, wet: null, dryGain: null, wetGain: null,
   master: null, analyser: null, playing: false, paused: false, startAt: 0,
