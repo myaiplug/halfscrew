@@ -42,7 +42,7 @@ body {
     repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 2px, transparent 2px 5px),
     linear-gradient(180deg, #23232c 0%, #131318 35%, #0a0a0f 100%);
   border: 1px solid #34343f;
-  padding: 14px 20px 10px;
+  padding: 12px 18px 6px;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, .22),
     inset 0 -1px 0 rgba(0, 0, 0, .85),
@@ -131,13 +131,20 @@ body {
   margin-top: 2px;
 }
 
+.head-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  margin-left: auto;
+}
 .head-tools {
   display: flex;
   align-items: center;
   gap: 7px;
-  margin-left: auto;
   flex: 0 0 auto;
 }
+.head-side .export { padding: 5px 12px; font-size: 8px; letter-spacing: .2em; }
 
 .tool {
   width: 27px; height: 27px;
@@ -187,7 +194,8 @@ body {
   flex-wrap: nowrap;
   gap: var(--rim);
   width: 100%;
-  min-height: calc(var(--big) + var(--drop));
+  min-height: calc(var(--big) + 28px);
+  margin-bottom: calc(var(--drop) * .28);
 }
 .knob-unit.mini {
   position: absolute;
@@ -521,9 +529,9 @@ body {
 .strip {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 12px;
-  padding-top: 8px;
+  gap: 4px;
+  margin-top: -18px;
+  padding-top: 4px;
   border-top: 1px solid #201b2c;
   box-shadow: 0 -1px 0 rgba(255,255,255,.05);
 }
