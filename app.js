@@ -93,16 +93,23 @@ function ensureCtx() {
   return engine.ctx;
 }
 
+function rampParam(audioParam, value, seconds) {
+  const now = engine.ctx.currentTime;
+  const cur = audioParam.value;
+  audioParam.cancelScheduledValues(now);
+  audioParam.setValueAtTime(cur, now);
+  audioParam.linearRampToValueAtTime(value, now + seconds);
+}
 function applyParams() {
-  if (!engine.playing) return;
-  const rate = params.time / 100;
+  if (!engine.playing || !engine.wet) return;
+  const rate = Math.max(0.5, Math.min(2, params.time / 100));
   const cents = Math.round(params.pitch) * 100;
+  const w = params.mix / 100;
   try {
-    engine.wet.playbackRate.setTargetAtTime(rate, engine.ctx.currentTime, 0.05);
-    engine.wet.detune.setTargetAtTime(cents, engine.ctx.currentTime, 0.05);
-    const w = params.mix / 100;
-    engine.wetGain.gain.setTargetAtTime(w, engine.ctx.currentTime, 0.05);
-    engine.dryGain.gain.setTargetAtTime(1 - w, engine.ctx.currentTime, 0.05);
+    rampParam(engine.wet.playbackRate, rate, 0.12);
+    rampParam(engine.wet.detune, cents, 0.12);
+    rampParam(engine.wetGain.gain, w, 0.08);
+    rampParam(engine.dryGain.gain, 1 - w, 0.08);
   } catch (_) {}
 }
 
@@ -284,30 +291,67 @@ function encodeWav(buffer) {
   return new Blob([out], { type: "audio/wav" });
 }
 
+function resample(src, ratio) {
+  const outLen = Math.max(1, Math.ceil(src.length / ratio));
+  const out = new AudioBuffer({ length: outLen, numberOfChannels: src.numberOfChannels, sampleRate: src.sampleRate });
+  for (let c = 0; c < src.numberOfChannels; c++) {
+    const a = src.getChannelData(c);
+    const b = out.getChannelData(c);
+    for (let i = 0; i < outLen; i++) {
+      const x = i * ratio;
+      const i0 = Math.floor(x);
+      const i1 = Math.min(a.length - 1, i0 + 1);
+      const f = x - i0;
+      b[i] = (a[i0] || 0) * (1 - f) + (a[i1] || 0) * f;
+    }
+  }
+  return out;
+}
 $("#exportBtn").addEventListener("click", async function () {
   this.classList.remove("flash"); void this.offsetWidth; this.classList.add("flash");
   if (!engine.buffer) {
     $("#nowPlaying").textContent = "LOAD A TRACK FIRST · THEN EXPORT THE SCREWED WAV";
     return;
   }
-  const rate = params.time / 100;
+  $("#nowPlaying").textContent = "RENDERING SCREWED WAV…";
+  const rate = Math.max(0.5, Math.min(2, params.time / 100));
+  const cents = Math.round(params.pitch) * 100;
   const src = engine.buffer;
-  const outLen = Math.ceil(src.length / rate);
-  const off = new OAC(src.numberOfChannels, outLen, src.sampleRate);
-  const s = off.createBufferSource();
-  s.buffer = src;
-  s.playbackRate.value = rate;
-  s.detune.value = Math.round(params.pitch) * 100;
-  s.connect(off.destination);
-  s.start();
-  const rendered = await off.startRendering();
+  const ratio = rate * Math.pow(2, cents / 1200);
+  let rendered;
+  try {
+    const Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    const outLen = Math.max(1, Math.ceil(src.length / ratio));
+    const off = new Ctx(src.numberOfChannels, outLen, src.sampleRate);
+    const s = off.createBufferSource();
+    s.buffer = src;
+    s.playbackRate.value = rate;
+    s.detune.value = cents;
+    s.connect(off.destination);
+    s.start(0);
+    rendered = await off.startRendering();
+  } catch (_) {
+    rendered = resample(src, ratio);
+  }
   const blob = encodeWav(rendered);
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `halfscrew-${engine.trackName.split(" ·")[0].toLowerCase()}-slowed.wav`;
+  a.download = "halfscrew-slowed.wav";
+  document.body.appendChild(a);
   a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 8000);
+  $("#nowPlaying").textContent = "EXPORTED · HALFTIME WAV";
 });
+function reportFrame() {
+  if (window.parent === window) return;
+  const box = document.querySelector(".plugin");
+  if (!box) return;
+  parent.postMessage({ type: "halfscrew-h", h: Math.ceil(box.getBoundingClientRect().height + 16) }, "*");
+}
+window.addEventListener("load", reportFrame);
+window.addEventListener("resize", reportFrame);
+setTimeout(reportFrame, 400);
 
 /* ── waveform scope ────────────────────────────────────────────── */
 
