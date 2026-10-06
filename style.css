@@ -522,11 +522,22 @@ body {
 
 .foot-controls {
   display: flex;
-  align-items: center;
-  justify-content: space-evenly;
-  gap: 8px 14px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
   width: 100%;
 }
+.foot-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  flex-wrap: nowrap;
+  gap: 8px 12px;
+  width: 100%;
+  min-width: 0;
+}
+.foot-line .switch,
+.foot-line .mix-row { flex: 0 1 auto; white-space: nowrap; }
 .foot-controls .switch { gap: 5px; }
 .foot-controls .sw-name { font-size: 7px; letter-spacing: .16em; }
 .foot-controls .pill { width: 24px; height: 12px; }
@@ -538,6 +549,7 @@ body {
   letter-spacing: .18em;
   padding: 5px 10px;
   gap: 5px;
+  align-self: center;
 }
 .sep {
   width: 1px;
@@ -575,22 +587,15 @@ body {
   .tag { letter-spacing: .28em; }
   .plug-head { gap: 10px; }
   .tool { width: 32px; height: 32px; }
-  .foot-controls {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    justify-items: start;
-    gap: 10px 12px;
-    padding: 2px 2px 0;
+  .foot-line {
+    justify-content: space-between;
+    gap: 6px;
+    overflow: hidden;
   }
-  .sep { display: none; }
-  .foot-controls .switch:first-of-type {
-    border-right: 1px solid rgba(201, 167, 255, .45);
-    box-shadow: 8px 0 10px -8px rgba(168, 85, 247, .8);
-    padding-right: 10px;
-  }
-  .mix-row, .export { grid-column: 1 / -1; width: 100%; }
-  .foot-controls .mix-row input[type="range"] { flex: 1; width: auto; }
-  .export { justify-content: center; }
+  .foot-line .sw-name { letter-spacing: .08em; font-size: 6.5px; }
+  .foot-controls .mix-row input[type="range"] { width: 42px; }
+  .sep { height: 14px; }
+  .export { width: 100%; justify-content: center; }
   .scope { height: 78px; }
   .hint { letter-spacing: .16em; }
 }
