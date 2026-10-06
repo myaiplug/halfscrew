@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
 <main class="stage">
@@ -22,18 +22,32 @@
           <p class="tag">THE SLOW MOTION POTION</p>
         </div>
       </div>
-      <div class="head-tools">
-        <button class="tool" title="Waveform view"><svg viewBox="0 0 24 24"><path d="M2 12h2l2-7 3 14 3-9 2 4h2l2-2h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></button>
-        <button class="tool" title="Play preview"><svg viewBox="0 0 24 24"><path d="M7 5v14l12-7z" fill="currentColor"/></svg></button>
-        <button class="tool" title="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
-        <button class="tool power on" id="powerBtn" title="Power"><svg viewBox="0 0 24 24"><path d="M12 3v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7.2 6.4a7 7 0 1 0 9.6 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+      <div class="head-options">
+        <div class="rail-col head-rail">
+          <label class="switch"><input type="checkbox" id="sw-hq" checked><span class="pill"></span><span class="sw-name">HQ</span></label>
+          <label class="switch"><input type="checkbox" id="sw-lowend" checked><span class="pill"></span><span class="sw-name">LOW-END</span></label>
+          <label class="switch"><input type="checkbox" id="sw-rubber"><span class="pill"></span><span class="sw-name">RUBBER</span></label>
+          <div class="mix-row">
+            <span class="sw-name">DRY/WET</span>
+            <input type="range" id="mix" min="0" max="100" value="100" aria-label="Dry wet mix">
+            <output id="mix-read">100</output>
+          </div>
+          <button class="export" id="exportBtn">
+            <svg viewBox="0 0 24 24"><path d="M12 3v11m0 0 4.5-4.5M12 14 7.5 9.5M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            EXPORT
+          </button>
+        </div>
+        <div class="head-tools">
+          <button class="tool" title="Waveform view"><svg viewBox="0 0 24 24"><path d="M2 12h2l2-7 3 14 3-9 2 4h2l2-2h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></button>
+          <button class="tool" id="playBtn" title="Play preview"><svg viewBox="0 0 24 24"><path d="M7 5v14l12-7z" fill="currentColor"/></svg></button>
+          <button class="tool" title="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+          <button class="tool power on" id="powerBtn" title="Power"><svg viewBox="0 0 24 24"><path d="M12 3v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7.2 6.4a7 7 0 1 0 9.6 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+        </div>
       </div>
     </header>
 
     <!-- ── track bar ──────────────────────────────────────── -->
     <section class="track-bar">
-      <button class="chip" id="demo-frostbite">FROSTBITE <em>Prod. TheBeatMob</em></button>
-      <button class="chip" id="demo-latenight">LATE NIGHT <em>Prod. TheBeatMob</em></button>
       <label class="chip load" id="loadChip">LOAD YOUR OWN
         <input type="file" id="fileInput" accept="audio/*" hidden>
       </label>
@@ -86,23 +100,6 @@
         </div>
       </div>
 
-      <!-- side rail, no meter -->
-      <div class="side">
-        <div class="rail-col">
-          <label class="switch"><input type="checkbox" id="sw-hq" checked><span class="pill"></span><span class="sw-name">HQ PROCESSING</span></label>
-          <label class="switch"><input type="checkbox" id="sw-lowend" checked><span class="pill"></span><span class="sw-name">LOW-END PROTECT</span></label>
-          <label class="switch"><input type="checkbox" id="sw-rubber"><span class="pill"></span><span class="sw-name">RUBBER BAND HQ</span></label>
-          <div class="mix-row">
-            <span class="sw-name">DRY/WET</span>
-            <input type="range" id="mix" min="0" max="100" value="100" aria-label="Dry wet mix">
-            <output id="mix-read">100</output>
-          </div>
-          <button class="export" id="exportBtn">
-            <svg viewBox="0 0 24 24"><path d="M12 3v11m0 0 4.5-4.5M12 14 7.5 9.5M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            EXPORT
-          </button>
-        </div>
-      </div>
     </section>
 
     <!-- ── micro strip ─────────────────────────────────────── -->
@@ -119,6 +116,6 @@
   </div>
   <p class="hint">tap the wave to jump · drag it to scan · drop a song on the display · export the screwed wav</p>
 </main>
-<script src="app.js?v=10"></script>
+<script src="app.js?v=11"></script>
 </body>
 </html>
