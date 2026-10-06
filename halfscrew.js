@@ -193,6 +193,7 @@ async function startPlayback(offset = 0) {
   engine.offset = offset;
   engine.playing = true;
   if (window.parent !== window) parent.postMessage({ type: "halfscrew-play" }, "*");
+  try { new BroadcastChannel("nodaw-transport").postMessage({ type: "play", who: "halfscrew" }); } catch (_) {}
 }
 
 function nowPlayingText() {
@@ -576,3 +577,10 @@ window.addEventListener("message", (e) => {
   const btn = document.getElementById("playBtn");
   if (btn) btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M7 5v14l12-7z" fill="currentColor"/></svg>';
 });
+
+try {
+  new BroadcastChannel("nodaw-transport").onmessage = (e) => {
+    if (!e.data || e.data.who === "halfscrew") return;
+    if (e.data.type === "play" && engine.playing) stopPlayback();
+  };
+} catch (_) {}
