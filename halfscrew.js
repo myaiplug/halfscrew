@@ -101,31 +101,56 @@ function rampParam(audioParam, value, seconds) {
   audioParam.setValueAtTime(cur, now);
   audioParam.linearRampToValueAtTime(value, now + seconds);
 }
+function screwRate() {
+  return Math.max(0.5, Math.min(2, params.time / 100));
+}
 function applyParams() {
-  if (!engine.playing || !engine.wet) return;
-  const rate = Math.max(0.5, Math.min(2, params.time / 100));
-  const cents = Math.round(params.pitch) * 100;
+  if (!engine.playing) return;
+  const rate = screwRate();
   const w = params.mix / 100;
   try {
-    rampParam(engine.wet.playbackRate, rate, 0.12);
-    rampParam(engine.wet.detune, cents, 0.12);
-    rampParam(engine.wetGain.gain, w, 0.08);
-    rampParam(engine.dryGain.gain, 1 - w, 0.08);
+    if (engine.worklet) {
+      rampParam(engine.worklet.parameters.get("rate"), rate, 0.12);
+      rampParam(engine.worklet.parameters.get("pitch"), params.pitch, 0.12);
+      rampParam(engine.worklet.parameters.get("lookahead"), params.lookahead / 1000, 0.08);
+    } else if (engine.wet) {
+      rampParam(engine.wet.playbackRate, rate, 0.12);
+      rampParam(engine.wet.detune, Math.round(params.pitch) * 100, 0.12);
+    }
+    if (engine.wetGain) rampParam(engine.wetGain.gain, w, 0.08);
+    if (engine.dryGain) rampParam(engine.dryGain.gain, 1 - w, 0.08);
   } catch (_) {}
+}
+async function ensureWorklet() {
+  const ctx = ensureCtx();
+  if (engine.worklet) return engine.worklet;
+  await ctx.audioWorklet.addModule("halfscrew-worklet.js");
+  engine.worklet = new AudioWorkletNode(ctx, "halfscrew-processor", { outputChannelCount: [2] });
+  return engine.worklet;
+}
+function postFile(node, buffer, offset) {
+  const channels = [];
+  for (let c = 0; c < buffer.numberOfChannels; c++) channels.push(buffer.getChannelData(c).slice());
+  node.port.postMessage({ type: "file", channels });
+  node.port.postMessage({ type: "seek", pos: Math.floor(offset * buffer.sampleRate) });
 }
 
 function stopPlayback() {
   [engine.dry, engine.wet].forEach((src) => {
     try { src && src.stop(); } catch (_) {}
   });
+  if (engine.worklet) {
+    try { engine.worklet.port.postMessage({ type: "stop" }); engine.worklet.disconnect(); } catch (_) {}
+  }
   engine.dry = engine.wet = null;
   engine.playing = false;
 }
 
-function startPlayback(offset = 0) {
+async function startPlayback(offset = 0) {
   const ctx = ensureCtx();
   stopPlayback();
   if (!engine.buffer) return;
+  try { await ensureWorklet(); } catch (_) { engine.worklet = null; }
 
   engine.loopEnd = engine.buffer.__loopEnd || engine.buffer.duration;
   offset = Math.max(0, Math.min(offset, engine.loopEnd - 0.01));
@@ -145,17 +170,25 @@ function startPlayback(offset = 0) {
   comp.ratio.value = 4;
 
   engine.dry.connect(engine.dryGain).connect(engine.master);
-  engine.wet.connect(engine.wetGain).connect(comp).connect(engine.master);
-
-  engine.wet.playbackRate.value = params.time / 100;
-  engine.wet.detune.value = Math.round(params.pitch) * 100;
   const w = params.mix / 100;
   engine.wetGain.gain.value = w;
   engine.dryGain.gain.value = 1 - w;
-
   const t = ctx.currentTime + 0.05;
   engine.dry.start(t, offset);
-  engine.wet.start(t, offset);
+  if (engine.worklet) {
+    postFile(engine.worklet, engine.buffer, offset);
+    engine.worklet.parameters.get("rate").value = screwRate();
+    engine.worklet.parameters.get("pitch").value = params.pitch;
+    engine.worklet.parameters.get("lookahead").value = params.lookahead / 1000;
+    engine.worklet.connect(engine.wetGain).connect(comp).connect(engine.master);
+    engine.worklet.port.postMessage({ type: "play" });
+    engine.wet = null;
+  } else {
+    engine.wet.connect(engine.wetGain).connect(comp).connect(engine.master);
+    engine.wet.playbackRate.value = screwRate();
+    engine.wet.detune.value = Math.round(params.pitch) * 100;
+    engine.wet.start(t, offset);
+  }
   engine.startAt = t;
   engine.offset = offset;
   engine.playing = true;
@@ -293,14 +326,14 @@ function encodeWav(buffer) {
   return new Blob([out], { type: "audio/wav" });
 }
 
-function resample(src, ratio) {
+function resample(src, ratio, ahead = 0) {
   const outLen = Math.max(1, Math.ceil(src.length / ratio));
   const out = new AudioBuffer({ length: outLen, numberOfChannels: src.numberOfChannels, sampleRate: src.sampleRate });
   for (let c = 0; c < src.numberOfChannels; c++) {
     const a = src.getChannelData(c);
     const b = out.getChannelData(c);
     for (let i = 0; i < outLen; i++) {
-      const x = i * ratio;
+      const x = i * ratio + ahead;
       const i0 = Math.floor(x);
       const i1 = Math.min(a.length - 1, i0 + 1);
       const f = x - i0;
@@ -320,21 +353,8 @@ $("#exportBtn").addEventListener("click", async function () {
   const cents = Math.round(params.pitch) * 100;
   const src = engine.buffer;
   const ratio = rate * Math.pow(2, cents / 1200);
-  let rendered;
-  try {
-    const Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-    const outLen = Math.max(1, Math.ceil(src.length / ratio));
-    const off = new Ctx(src.numberOfChannels, outLen, src.sampleRate);
-    const s = off.createBufferSource();
-    s.buffer = src;
-    s.playbackRate.value = rate;
-    s.detune.value = cents;
-    s.connect(off.destination);
-    s.start(0);
-    rendered = await off.startRendering();
-  } catch (_) {
-    rendered = resample(src, ratio);
-  }
+  const ahead = (params.lookahead / 1000) * src.sampleRate;
+  let rendered = resample(src, ratio, ahead);
   const blob = encodeWav(rendered);
   const base = (engine.trackName || "track").split(" ·")[0].replace(/\.[a-z0-9]+$/i, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "track";
   const name = base + "-HalfScrew-t" + Math.round(params.time) + "-p" + Math.round(params.pitch) + "-la" + Math.round(params.lookahead) + "-mix" + Math.round(params.mix) + ".wav";
