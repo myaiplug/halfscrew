@@ -174,30 +174,38 @@ body {
 
 .knob-cluster {
   --big: clamp(148px, 23vw, 216px);
-  --mini: clamp(72px, 11vw, 96px);
-  /* tangent clearance: halo is 16% past the rim, keep a chrome gap after that */
-  --gap: clamp(12px, 1.6vw, 22px);
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  grid-template-rows: auto var(--big) auto;
-  justify-items: center;
+  --mini: clamp(72px, 10vw, 92px);
+  --rim: 14px;
+  /* lower Apollonius solution: center distance D = big + rim, drop = sqrt((R+r)^2 - (D/2)^2) */
+  --drop: calc(1px * sqrt(
+    pow((var(--big) + var(--mini)) / 2px, 2) - pow((var(--big) + var(--rim)) / 2px, 2)
+  ));
+  position: relative;
+  display: flex;
   align-items: center;
-  column-gap: var(--gap);
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: var(--rim);
   width: 100%;
+  min-height: calc(var(--big) + var(--drop));
 }
-.knob-unit { display: contents; }
-.knob-unit:nth-child(1) > * { grid-column: 1; }
-.knob-unit:nth-child(2) > * { grid-column: 2; }
-.knob-unit:nth-child(3) > * { grid-column: 3; }
-.knob-unit .knob-name { grid-row: 1; }
-.knob-unit .knob-wrap { grid-row: 2; align-self: center; }
-.knob-unit .knob-read { grid-row: 3; }
+.knob-unit.mini {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  transform: translate(-50%, calc(-50% + var(--drop)));
+  pointer-events: none;
+}
+.knob-unit.mini .knob-wrap { pointer-events: auto; }
 
 .knob-unit {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
+  position: relative;
+  z-index: 1;
 }
 
 .knob-name {
@@ -582,7 +590,7 @@ body {
   .deck { flex-direction: column; gap: 14px; }
   .hsbadge { display: none; }
   .knob-unit.mini .knob-wrap { width: 62px; height: 62px; }
-  .knob-cluster { --big: clamp(108px, 30vw, 150px); --mini: 62px; --gap: 8px; }
+  .knob-cluster { --big: clamp(108px, 30vw, 150px); --mini: 58px; --rim: 8px; }
   .logo-text h1 { font-size: 22px; }
   .tag { letter-spacing: .28em; }
   .plug-head { gap: 10px; }
