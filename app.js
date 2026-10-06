@@ -334,14 +334,16 @@ $("#exportBtn").addEventListener("click", async function () {
     rendered = resample(src, ratio);
   }
   const blob = encodeWav(rendered);
+  const base = (engine.trackName || "track").split(" ·")[0].replace(/\.[a-z0-9]+$/i, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "track";
+  const name = base + "-HalfScrew-t" + Math.round(params.time) + "-p" + Math.round(params.pitch) + "-la" + Math.round(params.lookahead) + "-mix" + Math.round(params.mix) + ".wav";
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "halfscrew-slowed.wav";
+  a.download = name;
   document.body.appendChild(a);
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 8000);
-  $("#nowPlaying").textContent = "EXPORTED · HALFTIME WAV";
+  $("#nowPlaying").textContent = "EXPORTED · " + name;
 });
 function reportFrame() {
   if (window.parent === window) return;
