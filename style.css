@@ -194,8 +194,8 @@ body {
   flex-wrap: nowrap;
   gap: var(--rim);
   width: 100%;
-  min-height: calc(var(--big) + 28px);
-  margin-bottom: calc(var(--drop) * .28);
+  min-height: calc(var(--big) + 8px);
+  margin-bottom: 8px;
 }
 .knob-unit.mini {
   position: absolute;
@@ -670,4 +670,16 @@ body {
 .scope.drop-hover {
   border-color: #7c3aed;
   box-shadow: inset 0 3px 14px rgba(0,0,0,1), inset 0 0 60px rgba(124,58,237,.35), 0 0 20px rgba(168,85,247,.8);
+}
+
+body.in-frame { min-height: 0; padding: 8px; background: #040405; }
+body.in-frame .plugin { width: 100%; }
+@media (max-width: 900px) {
+  .knob-cluster { --big: clamp(120px, 28vw, 180px); --mini: 64px; --rim: 10px; }
+  .deck { gap: 10px; }
+}
+@media (max-width: 700px) {
+  .plug-head { flex-wrap: wrap; }
+  .head-side { width: 100%; align-items: flex-end; }
+  .foot-line { flex-wrap: wrap; justify-content: center; }
 }
