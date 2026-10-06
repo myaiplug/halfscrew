@@ -686,18 +686,20 @@ body.in-frame .plugin { width: 100%; }
 
 .transport { display:flex; gap:6px; align-items:center; }
 .play-main {
-  padding: 5px 12px;
-  font-size: 8px;
-  letter-spacing: .2em;
-  font-weight: 800;
-  color: #1a0b26;
-  background: linear-gradient(180deg, #f4ecff, #c9a7ff 55%, #7c3aed);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
   border: 1px solid #000;
-  border-radius: 999px;
+  color: #1a0b26;
+  background: radial-gradient(circle at 35% 30%, #fff, #d8c4ff 42%, #8b5cf6 70%, #4c1d95);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.75), inset 0 -3px 5px rgba(0,0,0,.45), 0 3px 0 #2a123f, 0 6px 14px rgba(0,0,0,.55);
+  display: grid;
+  place-items: center;
   cursor: pointer;
+  padding: 0;
 }
-.play-main:active { transform: translateY(1px); }
+.play-main svg { width: 16px; height: 16px; margin-left: 2px; }
+.play-main:active { transform: translateY(2px); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 1px 0 #2a123f; }
 @media (max-width: 700px) {
-  .transport { width: 100%; }
-  .play-main, .head-side .export { flex: 1; text-align: center; }
+  .transport { width: auto; }
 }
