@@ -76,6 +76,8 @@ document.querySelectorAll(".knob-wrap").forEach((wrap) => {
   });
 
   render();
+  window.knobSet = window.knobSet || {};
+  window.knobSet[key] = (next) => { val = Math.min(max, Math.max(min, next)); render(); };
 });
 
 /* ── audio engine ──────────────────────────────────────────────── */
@@ -465,13 +467,15 @@ function drawScope() {
         ctx.fillStyle = g;
         ctx.shadowColor = "rgba(168, 85, 247, 0.85)";
         ctx.shadowBlur = 9;
-        ctx.fillRect(x, midY - h / 2, 1.7, h);
+        const bw = window.scopeBars ? 2.6 : 1.7;
+    ctx.fillRect(x, midY - h / 2, bw, h);
         ctx.shadowBlur = 0;
         ctx.fillStyle = "rgba(178, 108, 255, 0.12)";
         ctx.fillRect(x, midY + 4, 1.7, h * 0.3);
       } else {
         ctx.fillStyle = "rgba(178, 108, 255, 0.35)";
-        ctx.fillRect(x, midY - h / 2, 1.7, h);
+        const bw = window.scopeBars ? 2.6 : 1.7;
+    ctx.fillRect(x, midY - h / 2, bw, h);
         ctx.fillStyle = "rgba(178, 108, 255, 0.07)";
         ctx.fillRect(x, midY + 4, 1.7, h * 0.3);
       }
@@ -488,7 +492,8 @@ function drawScope() {
       ctx.fillStyle = g;
       ctx.shadowColor = "rgba(168, 85, 247, 0.85)";
       ctx.shadowBlur = 9;
-      ctx.fillRect(x, midY - h / 2, 1.7, h);
+      const bw = window.scopeBars ? 2.6 : 1.7;
+    ctx.fillRect(x, midY - h / 2, bw, h);
       ctx.shadowBlur = 0;
       ctx.fillStyle = "rgba(178, 108, 255, 0.12)";
       ctx.fillRect(x, midY + 4, 1.7, h * 0.3);
@@ -584,3 +589,26 @@ try {
     if (e.data.type === "play" && engine.playing) stopPlayback();
   };
 } catch (_) {}
+
+const PRESETS = [
+  { name: "STRAIGHT", time: 100, pitch: 0, wow: 0 },
+  { name: "POTION", time: 100, pitch: -2, wow: 40 },
+  { name: "DEEP", time: 70, pitch: -4, wow: 60 },
+];
+let presetIx = 0;
+$("#waveBtn").addEventListener("click", () => {
+  window.scopeBars = !window.scopeBars;
+  $("#waveBtn").classList.toggle("on", window.scopeBars);
+  $("#nowPlaying").textContent = window.scopeBars ? "SCOPE · BARS" : "SCOPE · WAVE";
+});
+$("#gearBtn").addEventListener("click", () => {
+  presetIx = (presetIx + 1) % PRESETS.length;
+  const p = PRESETS[presetIx];
+  if (window.knobSet) {
+    window.knobSet.time && window.knobSet.time(p.time);
+    window.knobSet.pitch && window.knobSet.pitch(p.pitch);
+    window.knobSet.wow && window.knobSet.wow(p.wow);
+  }
+  $("#gearBtn").classList.add("on");
+  $("#nowPlaying").textContent = "PRESET · " + p.name;
+});
