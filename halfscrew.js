@@ -1,12 +1,10 @@
 
 const ADMINS = ["myaiplug", "nodaw", "nodaw@nodawlabs.com", "bz", "bthirtthreezy", "thebeatmob", "beez"];
-const LICENSE = "HS-NODAW-19";
 function role() {
   try {
     const saved = JSON.parse(localStorage.getItem("halfscrew-pass") || "{}");
     const mail = String(saved.email || "").toLowerCase();
     if (saved.admin || ADMINS.some((a) => mail.includes(a))) return "admin";
-    if (saved.license === LICENSE) return "unlimited";
   } catch (_) {}
   return "demo";
 }
