@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=30">
+<link rel="stylesheet" href="style.css?v=31">
 </head>
 <body>
 <script>if(window.parent!==window)document.body.classList.add("in-frame");</script>
@@ -63,14 +63,14 @@
           <output class="knob-read" id="read-time">100% HALFTIME</output>
         </div>
 
-        <!-- LOOKAHEAD mini -->
+        <!-- WOW mini -->
         <div class="knob-unit mini">
-          <div class="knob-wrap" data-knob="lookahead" data-min="0" data-max="20" data-val="5" data-fmt="ms">
+          <div class="knob-wrap" data-knob="wow" data-min="0" data-max="100" data-val="25" data-fmt="pct">
             <div class="led-ring"></div>
             <div class="knob"><div class="knob-face"><div class="knob-dial"><svg viewBox="0 0 40 40"><rect x="19" y="3" width="2.2" height="11" rx="1.1" fill="#f4ecff"/><rect x="19" y="3" width="2.2" height="11" rx="1.1" fill="#c9a7ff" opacity=".55"/></svg></div></div></div>
           </div>
-          <span class="knob-name">LOOKAHEAD</span>
-          <output class="knob-read" id="read-lookahead">5 MS</output>
+          <span class="knob-name">WOW</span>
+          <output class="knob-read" id="read-wow">25%</output>
         </div>
         <!-- PITCH -->
         <div class="knob-unit" data-label="PITCH">
@@ -121,7 +121,7 @@
   <p class="hint">tap the wave to jump · drag it to scan · drop a song on the display · export the screwed wav</p>
 </main>
 <script>window.OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;</script>
-<script src="halfscrew.js?v=30"></script>
+<script src="halfscrew.js?v=31"></script>
 
 <script>
 window.OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
@@ -138,7 +138,7 @@ window.addEventListener("load", function () {
       return;
     }
     if (note) note.textContent = "RENDERING SCREWED WAV…";
-    var params = window.params || { time: 100, pitch: 0, lookahead: 5, mix: 100 };
+    var params = window.params || { time: 100, pitch: 0, wow: 25, mix: 100 };
     var rate = Math.max(0.5, Math.min(2, params.time / 100));
     var cents = Math.round(params.pitch) * 100;
     var src = eng.buffer;
@@ -177,7 +177,7 @@ window.addEventListener("load", function () {
       }
     }
     var base = (eng.trackName || "track").split(" ·")[0].replace(/\.[a-z0-9]+$/i, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "track";
-    var name = base + "-HalfScrew-t" + Math.round(params.time) + "-p" + Math.round(params.pitch) + "-la" + Math.round(params.lookahead) + "-mix" + Math.round(params.mix) + ".wav";
+    var name = base + "-HalfScrew-t" + Math.round(params.time) + "-p" + Math.round(params.pitch) + "-w" + Math.round(params.wow) + "-mix" + Math.round(params.mix) + ".wav";
     var a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([ab], { type: "audio/wav" }));
     a.download = name;
