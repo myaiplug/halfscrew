@@ -194,8 +194,8 @@ body {
   flex-wrap: nowrap;
   gap: var(--rim);
   width: 100%;
-  min-height: calc(var(--big) + 8px);
-  margin-bottom: 8px;
+  min-height: calc(var(--big) + var(--drop) + 36px);
+  margin-bottom: 22px;
 }
 .knob-unit.mini {
   position: absolute;
@@ -532,8 +532,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-top: -18px;
-  padding-top: 4px;
+  margin-top: 18px;
+  padding-top: 14px;
   border-top: 1px solid #201b2c;
   box-shadow: 0 -1px 0 rgba(255,255,255,.05);
 }
