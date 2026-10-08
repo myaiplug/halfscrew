@@ -5,6 +5,7 @@ function role() {
     const saved = JSON.parse(localStorage.getItem("halfscrew-pass") || "{}");
     const mail = String(saved.email || "").toLowerCase();
     if (saved.admin || ADMINS.some((a) => mail.includes(a))) return "admin";
+    if (saved.paid) return "unlimited";
   } catch (_) {}
   return "demo";
 }

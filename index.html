@@ -91,6 +91,7 @@
 <div class="pass" id="pass">
   <span id="passState">Demo · 20 second export</span>
   <button type="button" id="buyBtn">Unlock $19</button>
+  <button type="button" id="checkBtn">Check order</button>
   <input id="passMail" type="email" placeholder="Email" aria-label="Email">
   <button type="button" id="passBtn">Apply</button>
 </div>
@@ -129,7 +130,7 @@
   <p class="hint">tap the wave to jump · drag it to scan · drop a song on the display · export the screwed wav</p>
 </main>
 <script>window.OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;</script>
-<script src="halfscrew.js?v=34"></script>
+<script src="halfscrew.js?v=35"></script>
 
 <script>
 window.OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
@@ -209,10 +210,29 @@ window.addEventListener("load", function () {
     const saved = read();
     const mail = String(saved.email || "").toLowerCase();
     const admin = saved.admin || ADMINS.some((a) => mail.includes(a));
-    const full = admin;
+    const full = admin || saved.paid;
     if (state) state.textContent = admin ? "Admin · full export" : full ? "Unlimited · full export" : "Demo · 20 second export";
   }
-  document.getElementById("buyBtn").onclick = () => window.open("https://shop.nodawlabs.com/cart/67934696767794:1", "_blank");
+  document.getElementById("buyBtn").onclick = () => window.open("https://shop.nodawlabs.com/cart/67934696767794:1?checkout", "_blank");
+  document.getElementById("checkBtn").onclick = async () => {
+    const email = document.getElementById("passMail").value.trim().toLowerCase();
+    if (!email) { if (state) state.textContent = "Enter the checkout email"; return; }
+    if (state) state.textContent = "Checking Shopify…";
+    try {
+      const res = await fetch("https://halfscrew.netlify.app/.netlify/functions/shopify-order", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        localStorage.setItem("halfscrew-pass", JSON.stringify({ email, admin: false, paid: true, order: data.order }));
+        if (state) state.textContent = "Paid · " + (data.order || "full export");
+      } else if (state) state.textContent = data.error || "No paid order";
+    } catch (e) {
+      if (state) state.textContent = "Order check unavailable";
+    }
+  };
   document.getElementById("passBtn").onclick = () => {
     const email = document.getElementById("passMail").value.trim().toLowerCase();
     const admin = ADMINS.some((a) => email.includes(a));
