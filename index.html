@@ -25,9 +25,9 @@
       </div>
         <div class="head-side">
         <div class="head-tools">
-          <button class="tool" title="Waveform view"><svg viewBox="0 0 24 24"><path d="M2 12h2l2-7 3 14 3-9 2 4h2l2-2h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></button>
+          <button class="tool" id="waveBtn" title="Waveform view"><svg viewBox="0 0 24 24"><path d="M2 12h2l2-7 3 14 3-9 2 4h2l2-2h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></button>
           <button class="tool" id="playBtn" title="Play preview"><svg viewBox="0 0 24 24"><path d="M7 5v14l12-7z" fill="currentColor"/></svg></button>
-          <button class="tool" title="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+          <button class="tool" id="gearBtn" title="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
           <button class="tool power on" id="powerBtn" title="Power"><svg viewBox="0 0 24 24"><path d="M12 3v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7.2 6.4a7 7 0 1 0 9.6 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         </div>
 
@@ -121,7 +121,7 @@
   <p class="hint">tap the wave to jump · drag it to scan · drop a song on the display · export the screwed wav</p>
 </main>
 <script>window.OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;</script>
-<script src="halfscrew.js?v=31"></script>
+<script src="halfscrew.js?v=32"></script>
 
 <script>
 window.OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
