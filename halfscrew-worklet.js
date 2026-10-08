@@ -20,7 +20,7 @@ class HalfScrewProcessor extends AudioWorkletProcessor {
     return [
       { name: "rate", defaultValue: 0.5, minValue: 0.5, maxValue: 2 },
       { name: "pitch", defaultValue: 0, minValue: -12, maxValue: 12 },
-      { name: "lookahead", defaultValue: 0, minValue: 0, maxValue: 0.02 },
+      { name: "wow", defaultValue: 0.25, minValue: 0, maxValue: 1 },
     ];
   }
   process(inputs, outputs, parameters) {
@@ -33,21 +33,23 @@ class HalfScrewProcessor extends AudioWorkletProcessor {
     }
     const rate = parameters.rate[0];
     const pitch = parameters.pitch[0];
-    const look = parameters.lookahead[0];
-    const step = rate * Math.pow(2, pitch / 12);
-    const ahead = look * sampleRate;
+    const wow = parameters.wow[0];
+    const depth = wow * 0.45;
     for (let i = 0; i < n; i++) {
-      const x = this.pos + ahead;
+      const wobble = Math.sin(this.phase || 0) * depth;
+      const step = rate * Math.pow(2, (pitch + wobble) / 12);
+      const x = this.pos;
       const i0 = Math.floor(x);
       const f = x - i0;
       for (let c = 0; c < out.length; c++) {
         const ch = this.channels[Math.min(c, this.channels.length - 1)];
-        const a = ch[i0 % this.length] || 0;
-        const b = ch[(i0 + 1) % this.length] || 0;
+        const a = ch[((i0 % this.length) + this.length) % this.length] || 0;
+        const b = ch[(((i0 + 1) % this.length) + this.length) % this.length] || 0;
         out[c][i] = a * (1 - f) + b * f;
       }
       this.pos += step;
       if (this.pos >= this.length) this.pos -= this.length;
+      this.phase = (this.phase || 0) + (2 * Math.PI * 0.35) / sampleRate;
     }
     return true;
   }

@@ -14,7 +14,7 @@ window.addEventListener("unhandledrejection", (e) => showErr(e.reason));
 
 /* ── shared parameter state ───────────────────────────────────── */
 
-window.params = { time: 100, pitch: 0, lookahead: 5, mix: 100 };
+window.params = { time: 100, pitch: 0, wow: 25, mix: 100 };
 window.engine = {
   ctx: null, buffer: null, trackName: "",
   dry: null, wet: null, dryGain: null, wetGain: null,
@@ -29,7 +29,7 @@ const FMT = {
     const n = Math.round(v);
     return `${n > 0 ? "+" : ""}${n} SEMITONE${Math.abs(n) === 1 ? "" : "S"}`;
   },
-  ms: (v) => `${Math.round(v)} MS`,
+  pct: (v) => `${Math.round(v)}%`,
 };
 
 document.querySelectorAll(".knob-wrap").forEach((wrap) => {
@@ -112,7 +112,7 @@ function applyParams() {
     if (engine.worklet) {
       rampParam(engine.worklet.parameters.get("rate"), rate, 0.12);
       rampParam(engine.worklet.parameters.get("pitch"), params.pitch, 0.12);
-      rampParam(engine.worklet.parameters.get("lookahead"), params.lookahead / 1000, 0.08);
+      rampParam(engine.worklet.parameters.get("wow"), params.wow / 100, 0.08);
     } else if (engine.wet) {
       rampParam(engine.wet.playbackRate, rate, 0.12);
       rampParam(engine.wet.detune, Math.round(params.pitch) * 100, 0.12);
@@ -179,7 +179,7 @@ async function startPlayback(offset = 0) {
     postFile(engine.worklet, engine.buffer, offset);
     engine.worklet.parameters.get("rate").value = screwRate();
     engine.worklet.parameters.get("pitch").value = params.pitch;
-    engine.worklet.parameters.get("lookahead").value = params.lookahead / 1000;
+    engine.worklet.parameters.get("wow").value = params.wow / 100;
     engine.worklet.connect(engine.wetGain).connect(comp).connect(engine.master);
     engine.worklet.port.postMessage({ type: "play" });
     engine.wet = null;
@@ -327,14 +327,15 @@ function encodeWav(buffer) {
   return new Blob([out], { type: "audio/wav" });
 }
 
-function resample(src, ratio, ahead = 0) {
+function resample(src, ratio, wow = 0) {
   const outLen = Math.max(1, Math.ceil(src.length / ratio));
   const out = new AudioBuffer({ length: outLen, numberOfChannels: src.numberOfChannels, sampleRate: src.sampleRate });
   for (let c = 0; c < src.numberOfChannels; c++) {
     const a = src.getChannelData(c);
     const b = out.getChannelData(c);
     for (let i = 0; i < outLen; i++) {
-      const x = i * ratio + ahead;
+      const wobble = Math.sin((i / src.sampleRate) * 2 * Math.PI * 0.35) * wow * 0.45;
+      const x = i * ratio * Math.pow(2, wobble / 12);
       const i0 = Math.floor(x);
       const i1 = Math.min(a.length - 1, i0 + 1);
       const f = x - i0;
@@ -354,11 +355,10 @@ $("#exportBtn").addEventListener("click", async function () {
   const cents = Math.round(params.pitch) * 100;
   const src = engine.buffer;
   const ratio = rate * Math.pow(2, cents / 1200);
-  const ahead = (params.lookahead / 1000) * src.sampleRate;
-  let rendered = resample(src, ratio, ahead);
+  let rendered = resample(src, ratio, params.wow / 100);
   const blob = encodeWav(rendered);
   const base = (engine.trackName || "track").split(" ·")[0].replace(/\.[a-z0-9]+$/i, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "track";
-  const name = base + "-HalfScrew-t" + Math.round(params.time) + "-p" + Math.round(params.pitch) + "-la" + Math.round(params.lookahead) + "-mix" + Math.round(params.mix) + ".wav";
+  const name = base + "-HalfScrew-t" + Math.round(params.time) + "-p" + Math.round(params.pitch) + "-w" + Math.round(params.wow) + "-mix" + Math.round(params.mix) + ".wav";
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = name;
