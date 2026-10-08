@@ -130,7 +130,7 @@
   <p class="hint">tap the wave to jump · drag it to scan · drop a song on the display · export the screwed wav</p>
 </main>
 <script>window.OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;</script>
-<script src="halfscrew.js?v=35"></script>
+<script src="halfscrew.js?v=36"></script>
 
 <script>
 window.OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
@@ -219,7 +219,7 @@ window.addEventListener("load", function () {
     if (!email) { if (state) state.textContent = "Enter the checkout email"; return; }
     if (state) state.textContent = "Checking Shopify…";
     try {
-      const res = await fetch("https://halfscrew.netlify.app/.netlify/functions/shopify-order", {
+      const res = await fetch("https://halfscrew-order-myaiplugs-projects.vercel.app/api/shopify-order", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email })
