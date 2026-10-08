@@ -1,3 +1,23 @@
+
+const ADMINS = ["myaiplug", "nodaw", "nodaw@nodawlabs.com", "bz", "bthirtthreezy", "thebeatmob", "beez"];
+const LICENSE = "HS-NODAW-19";
+function role() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("halfscrew-pass") || "{}");
+    const mail = String(saved.email || "").toLowerCase();
+    if (saved.admin || ADMINS.some((a) => mail.includes(a))) return "admin";
+    if (saved.license === LICENSE) return "unlimited";
+  } catch (_) {}
+  return "demo";
+}
+function clipDemo(buffer) {
+  if (role() !== "demo") return buffer;
+  const frames = Math.min(buffer.length, Math.floor(buffer.sampleRate * 20));
+  const out = new AudioBuffer({ length: frames, numberOfChannels: buffer.numberOfChannels, sampleRate: buffer.sampleRate });
+  for (let c = 0; c < buffer.numberOfChannels; c++) out.getChannelData(c).set(buffer.getChannelData(c).subarray(0, frames));
+  return out;
+}
+window.halfscrewRole = role;
 window.OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
 /* HALFSCREW — live knobs, real audio engine, scope */
 
@@ -358,7 +378,8 @@ $("#exportBtn").addEventListener("click", async function () {
   const src = engine.buffer;
   const ratio = rate * Math.pow(2, cents / 1200);
   let rendered = resample(src, ratio, params.wow / 100);
-  const blob = encodeWav(rendered);
+  const clipped = clipDemo(rendered);
+  const blob = encodeWav(clipped);
   const base = (engine.trackName || "track").split(" ·")[0].replace(/\.[a-z0-9]+$/i, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "track";
   const name = base + "-HalfScrew-t" + Math.round(params.time) + "-p" + Math.round(params.pitch) + "-w" + Math.round(params.wow) + "-mix" + Math.round(params.mix) + ".wav";
   const a = document.createElement("a");
@@ -368,7 +389,8 @@ $("#exportBtn").addEventListener("click", async function () {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 8000);
-  $("#nowPlaying").textContent = "EXPORTED · " + name;
+  const who = role();
+  $("#nowPlaying").textContent = who === "demo" ? "DEMO EXPORT · 20s · " + name : "EXPORTED · " + name;
 });
 function reportFrame() {
   if (window.parent === window) return;
