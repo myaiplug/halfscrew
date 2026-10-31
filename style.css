@@ -4,16 +4,55 @@
   --bg: #040405;
   --ink: #f2eefc;
   --ink-dim: #8b8797;
-  --purple: #a855f7;
-  --purple-hot: #c9a7ff;
-  --purple-deep: #7c3aed;
+
+  /* ── strain accent theme ──────────────────────────────────────────
+     halfscrew-theme.js eases the *-rgb triplets to the picked strain's colour.
+     Everything below derives from them, so the whole UI follows. These defaults are the
+     original HalfScrew purple (also what you see before JS runs / when "Original" is chosen). */
+  --accent-rgb: 168, 85, 247;
+  --accent-2-rgb: 124, 58, 237;
+  --accent-hot-rgb: 201, 167, 255;
+  --accent-soft-rgb: 230, 214, 255;
+  --accent-pale-rgb: 244, 236, 255;
+  --accent-bright-rgb: 178, 108, 255;
+  --accent-dark-rgb: 91, 33, 168;
+  --accent-edge-rgb: 58, 44, 88;
+  --accent-edge-2-rgb: 91, 63, 160;
+  --accent-well-rgb: 23, 16, 42;
+  --accent-fill-rgb: 168, 85, 247;
+  --btn-1-rgb: 168, 85, 247;
+  --btn-2-rgb: 124, 58, 237;
+  --btn-3-rgb: 91, 33, 168;
+  --on-accent-rgb: 248, 242, 255;
+
+  --accent: rgb(var(--accent-rgb));            /* primary accent */
+  --accent-2: rgb(var(--accent-2-rgb));        /* secondary / deep accent */
+  --accent-hot: rgb(var(--accent-hot-rgb));    /* light tint: text + highlights on the dark UI */
+  --accent-soft: rgb(var(--accent-soft-rgb));
+  --accent-pale: rgb(var(--accent-pale-rgb));
+  --accent-bright: rgb(var(--accent-bright-rgb));
+  --accent-dark: rgb(var(--accent-dark-rgb));
+  --accent-edge: rgb(var(--accent-edge-rgb));  /* tinted hairlines */
+  --accent-edge-2: rgb(var(--accent-edge-2-rgb));
+  --accent-well: rgb(var(--accent-well-rgb));
+  --accent-fill: rgb(var(--accent-fill-rgb));  /* fills that carry dark ink text */
+  --accent-glow: rgba(var(--accent-rgb), .6);  /* neon halo */
+  --btn-1: rgb(var(--btn-1-rgb));
+  --btn-2: rgb(var(--btn-2-rgb));
+  --btn-3: rgb(var(--btn-3-rgb));
+  --on-accent: rgb(var(--on-accent-rgb));
+
+  /* legacy names, kept as aliases */
+  --purple: var(--accent);
+  --purple-hot: var(--accent-hot);
+  --purple-deep: var(--accent-2);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   background:
-    radial-gradient(1100px 500px at 50% -20%, rgba(124, 58, 237, .13), transparent 60%),
+    radial-gradient(1100px 500px at 50% -20%, rgba(var(--accent-2-rgb), .13), transparent 60%),
     var(--bg);
   color: var(--ink);
   font-family: "Space Grotesk", system-ui, sans-serif;
@@ -50,8 +89,8 @@ body {
     0 2px 0 rgba(255,255,255,.05),
     0 34px 70px rgba(0, 0, 0, .85),
     0 10px 26px rgba(0, 0, 0, .6),
-    0 0 22px rgba(168, 85, 247, .5),
-    0 0 44px rgba(124, 58, 237, .28);
+    0 0 22px rgba(var(--accent-rgb), .5),
+    0 0 44px rgba(var(--accent-2-rgb), .28);
   overflow: hidden;
 }
 
@@ -61,12 +100,12 @@ body {
   inset: 0;
   border-radius: 14px;
   padding: 1px;
-  background: linear-gradient(140deg, var(--purple-hot), transparent 30%, transparent 70%, var(--purple-deep));
+  background: linear-gradient(140deg, var(--accent-hot), transparent 30%, transparent 70%, var(--accent-2));
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
-  filter: drop-shadow(0 0 8px rgba(168, 85, 247, .5));
+  filter: drop-shadow(0 0 8px rgba(var(--accent-rgb), .5));
 }
 
 .screw {
@@ -105,7 +144,7 @@ body {
 
 .logo-block .crown {
   width: 20px; height: 20px;
-  filter: drop-shadow(0 0 6px rgba(201, 167, 255, .8));
+  filter: drop-shadow(0 0 6px rgba(var(--accent-hot-rgb), .8));
 }
 
 .logo-text h1 {
@@ -114,14 +153,14 @@ body {
   line-height: .85;
   letter-spacing: .05em;
   color: var(--ink);
-  text-shadow: 0 1px 0 rgba(0,0,0,.9), 0 0 14px rgba(201, 167, 255, .35);
+  text-shadow: 0 1px 0 rgba(0,0,0,.9), 0 0 14px rgba(var(--accent-hot-rgb), .35);
 }
 .logo-text h1 span {
   color: transparent;
-  background: linear-gradient(180deg, #f0e4ff, var(--purple) 75%);
+  background: linear-gradient(180deg, var(--accent-pale), var(--accent) 75%);
   -webkit-background-clip: text;
   background-clip: text;
-  filter: drop-shadow(0 1px 0 rgba(0,0,0,.6)) drop-shadow(0 0 8px rgba(168, 85, 247, .65));
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,.6)) drop-shadow(0 0 8px rgba(var(--accent-rgb), .65));
 }
 .tag {
   font-size: 7.5px;
@@ -161,12 +200,12 @@ body {
 .tool svg { width: 14px; height: 14px; }
 .tool:hover {
   filter: brightness(1.18);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 3px rgba(0,0,0,.55), 0 2px 5px rgba(0,0,0,.7), 0 0 14px rgba(168,85,247,.7);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 3px rgba(0,0,0,.55), 0 2px 5px rgba(0,0,0,.7), 0 0 14px rgba(var(--accent-rgb), .7);
 }
 .tool.power.on {
   color: #1a0b26;
-  background: linear-gradient(180deg, #e9d8ff, var(--purple) 55%, #5b21a8);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -2px 4px rgba(0,0,0,.5), 0 0 16px rgba(168,85,247,.9), 0 2px 5px rgba(0,0,0,.7);
+  background: linear-gradient(180deg, var(--accent-soft), var(--accent-fill) 55%, var(--accent-dark));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -2px 4px rgba(0,0,0,.5), 0 0 16px rgba(var(--accent-rgb), .9), 0 2px 5px rgba(0,0,0,.7);
 }
 
 /* ── deck: knobs together, then side rail ───────────────────────── */
@@ -223,7 +262,7 @@ body {
   font-weight: 700;
   letter-spacing: .34em;
   color: var(--ink);
-  text-shadow: 0 1px 0 #000, 0 0 10px rgba(201,167,255,.25);
+  text-shadow: 0 1px 0 #000, 0 0 10px rgba(var(--accent-hot-rgb), .25);
 }
 
 .knob-wrap {
@@ -235,13 +274,13 @@ body {
   user-select: none;
   filter: drop-shadow(0 10px 18px rgba(0,0,0,.85));
 }
-/* purple neon halo radiating from under the knob */
+/* accent neon halo radiating from under the knob */
 .knob-wrap::before {
   content: "";
   position: absolute;
   inset: -16%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(168,85,247,.42) 30%, rgba(124,58,237,.16) 58%, transparent 72%);
+  background: radial-gradient(circle, rgba(var(--accent-rgb), .42) 30%, rgba(var(--accent-2-rgb), .16) 58%, transparent 72%);
   filter: blur(14px);
   z-index: 0;
   pointer-events: none;
@@ -253,10 +292,10 @@ body {
   inset: 0;
   z-index: 2;
   border-radius: 50%;
-  background: conic-gradient(from 220deg, var(--purple) 0deg, var(--purple-hot) var(--arc, 108deg), #241b33 var(--arc, 108deg), #161020 360deg);
+  background: conic-gradient(from 220deg, var(--accent) 0deg, var(--accent-hot) var(--arc, 108deg), #241b33 var(--arc, 108deg), #161020 360deg);
   -webkit-mask: radial-gradient(circle, transparent 67%, #000 69%);
   mask: radial-gradient(circle, transparent 67%, #000 69%);
-  filter: drop-shadow(0 0 9px rgba(168, 85, 247, .95)) drop-shadow(0 0 26px rgba(124, 58, 237, .5));
+  filter: drop-shadow(0 0 9px rgba(var(--accent-rgb), .95)) drop-shadow(0 0 26px rgba(var(--accent-2-rgb), .5));
   pointer-events: none;
 }
 
@@ -336,23 +375,23 @@ body {
   display: grid;
   place-items: center;
 }
-.knob-dial svg { width: 100%; height: 100%; filter: drop-shadow(0 0 5px rgba(201,167,255,.9)) drop-shadow(0 0 12px rgba(168,85,247,.6)); }
+.knob-dial svg { width: 100%; height: 100%; filter: drop-shadow(0 0 5px rgba(var(--accent-hot-rgb), .9)) drop-shadow(0 0 12px rgba(var(--accent-rgb), .6)); }
 
-.knob-wrap:hover .led-ring { filter: drop-shadow(0 0 14px rgba(168,85,247,1)) drop-shadow(0 0 36px rgba(124,58,237,.65)); }
-.knob-wrap.dragging .led-ring { filter: drop-shadow(0 0 20px rgba(201,167,255,1)) drop-shadow(0 0 48px rgba(168,85,247,.8)); }
+.knob-wrap:hover .led-ring { filter: drop-shadow(0 0 14px rgba(var(--accent-rgb), 1)) drop-shadow(0 0 36px rgba(var(--accent-2-rgb), .65)); }
+.knob-wrap.dragging .led-ring { filter: drop-shadow(0 0 20px rgba(var(--accent-hot-rgb), 1)) drop-shadow(0 0 48px rgba(var(--accent-rgb), .8)); }
 
 .knob-read {
   font-size: clamp(8.5px, 1.2vw, 10.5px);
   font-weight: 700;
   letter-spacing: .16em;
-  color: var(--purple-hot);
+  color: var(--accent-hot);
   background: linear-gradient(180deg, #17131f, #0a0812);
-  border: 1px solid #3a2c58;
+  border: 1px solid var(--accent-edge);
   border-radius: 5px;
   padding: 3px 7px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), inset 0 2px 5px rgba(0,0,0,.9), inset 0 0 10px rgba(124,58,237,.22), 0 2px 3px rgba(0,0,0,.6);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), inset 0 2px 5px rgba(0,0,0,.9), inset 0 0 10px rgba(var(--accent-2-rgb), .22), 0 2px 3px rgba(0,0,0,.6);
   white-space: nowrap;
-  text-shadow: 0 0 8px rgba(201,167,255,.6);
+  text-shadow: 0 0 8px rgba(var(--accent-hot-rgb), .6);
 }
 
 /* ── HS badge between the big knobs ──────────────────────────────── */
@@ -371,9 +410,9 @@ body {
     inset 0 -5px 9px rgba(0,0,0,.85),
     inset 0 0 0 1px rgba(0,0,0,.8),
     0 5px 12px rgba(0,0,0,.75),
-    0 0 18px rgba(124,58,237,.35);
+    0 0 18px rgba(var(--accent-2-rgb), .35);
 }
-.hsbadge svg { width: 52%; height: 52%; filter: drop-shadow(0 0 6px rgba(139,92,246,.8)); }
+.hsbadge svg { width: 52%; height: 52%; filter: drop-shadow(0 0 6px rgba(var(--accent-2-rgb), .8)); }
 
 /* ── scope ───────────────────────────────────────────────────────── */
 
@@ -388,7 +427,7 @@ body {
   box-shadow:
     inset 0 3px 14px rgba(0, 0, 0, 1),
     inset 0 0 44px rgba(0, 0, 0, .95),
-    inset 0 0 20px rgba(124, 58, 237, .07),
+    inset 0 0 20px rgba(var(--accent-2-rgb), .07),
     0 1px 0 rgba(255,255,255,.12);
 }
 #scope { display: block; width: 100%; height: 100%; touch-action: pan-y; cursor: crosshair; }
@@ -408,8 +447,8 @@ body {
   left: 50%;
   width: 2px;
   transform: translateX(-50%);
-  background: linear-gradient(180deg, transparent, var(--purple) 18%, var(--purple-hot) 50%, var(--purple) 82%, transparent);
-  box-shadow: 0 0 12px rgba(168, 85, 247, .9), 0 0 34px rgba(168, 85, 247, .45);
+  background: linear-gradient(180deg, transparent, var(--accent) 18%, var(--accent-hot) 50%, var(--accent) 82%, transparent);
+  box-shadow: 0 0 12px rgba(var(--accent-rgb), .9), 0 0 34px rgba(var(--accent-rgb), .45);
 }
 
 .scope-playhead {
@@ -447,11 +486,11 @@ body {
   box-shadow: inset 0 1px 1px rgba(255,255,255,.4), 0 1px 2px rgba(0,0,0,.8);
   transition: transform .2s, background .2s, box-shadow .2s;
 }
-.switch input:checked + .pill { box-shadow: inset 0 2px 4px rgba(0,0,0,.95), inset 0 0 8px rgba(168,85,247,.35), 0 0 12px rgba(168,85,247,.55), 0 1px 0 rgba(255,255,255,.1); }
+.switch input:checked + .pill { box-shadow: inset 0 2px 4px rgba(0,0,0,.95), inset 0 0 8px rgba(var(--accent-rgb), .35), 0 0 12px rgba(var(--accent-rgb), .55), 0 1px 0 rgba(255,255,255,.1); }
 .switch input:checked + .pill::after {
   transform: translateX(14px);
-  background: radial-gradient(circle at 32% 28%, #fff, var(--purple-hot) 45%, #7c3aed);
-  box-shadow: 0 0 8px rgba(201, 167, 255, 1), 0 0 20px rgba(168, 85, 247, .7);
+  background: radial-gradient(circle at 32% 28%, #fff, var(--accent-hot) 45%, var(--accent-2));
+  box-shadow: 0 0 8px rgba(var(--accent-hot-rgb), 1), 0 0 20px rgba(var(--accent-rgb), .7);
 }
 
 .sw-name {
@@ -462,7 +501,7 @@ body {
   text-shadow: 0 1px 0 #000;
   transition: color .2s, text-shadow .2s;
 }
-.switch input:checked ~ .sw-name { color: var(--ink); text-shadow: 0 1px 0 #000, 0 0 8px rgba(201, 167, 255, .5); }
+.switch input:checked ~ .sw-name { color: var(--ink); text-shadow: 0 1px 0 #000, 0 0 8px rgba(var(--accent-hot-rgb), .5); }
 
 .mix-row { display: flex; align-items: center; gap: 6px; }
 .mix-row input[type="range"] {
@@ -470,7 +509,7 @@ body {
   appearance: none;
   height: 4px;
   border-radius: 4px;
-  background: linear-gradient(90deg, var(--purple) var(--fill, 100%), #201a2e var(--fill, 100%));
+  background: linear-gradient(90deg, var(--accent) var(--fill, 100%), #201a2e var(--fill, 100%));
   box-shadow: inset 0 1px 3px rgba(0,0,0,.95), inset 0 0 4px rgba(0,0,0,.8);
   outline: none;
   cursor: pointer;
@@ -481,15 +520,15 @@ body {
   border-radius: 50%;
   background: radial-gradient(circle at 32% 28%, #fff, #cfcfe0 30%, #6a6a78 65%, #26262e);
   border: 1px solid #000;
-  box-shadow: inset 0 1px 1px rgba(255,255,255,.7), 0 0 8px rgba(201,167,255,.85), 0 0 18px rgba(124,58,237,.5), 0 2px 4px rgba(0,0,0,.8);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.7), 0 0 8px rgba(var(--accent-hot-rgb), .85), 0 0 18px rgba(var(--accent-2-rgb), .5), 0 2px 4px rgba(0,0,0,.8);
   cursor: pointer;
 }
 #mix-read {
   font-size: 8px;
-  color: var(--purple-hot);
+  color: var(--accent-hot);
   font-weight: 700;
   min-width: 20px;
-  text-shadow: 0 0 6px rgba(201,167,255,.6);
+  text-shadow: 0 0 6px rgba(var(--accent-hot-rgb), .6);
 }
 
 .export {
@@ -500,30 +539,30 @@ body {
   font-size: 9px;
   font-weight: 700;
   letter-spacing: .24em;
-  color: #f8f2ff;
-  background: linear-gradient(180deg, #a855f7 0%, #7c3aed 55%, #5b21a8 100%);
-  border: 1px solid #d9c2ff;
+  color: var(--on-accent);
+  background: linear-gradient(180deg, var(--btn-1) 0%, var(--btn-2) 55%, var(--btn-3) 100%);
+  border: 1px solid var(--accent-soft);
   border-radius: 7px;
   padding: 6px 13px;
   cursor: pointer;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, .5),
     inset 0 -2px 4px rgba(0,0,0,.45),
-    0 0 16px rgba(168, 85, 247, .8),
-    0 0 40px rgba(124, 58, 237, .4),
+    0 0 16px rgba(var(--accent-rgb), .8),
+    0 0 40px rgba(var(--accent-2-rgb), .4),
     0 3px 8px rgba(0,0,0,.7);
   text-shadow: 0 1px 1px rgba(0,0,0,.6);
   transition: transform .15s, box-shadow .2s;
 }
 .export svg { width: 12px; height: 12px; filter: drop-shadow(0 1px 1px rgba(0,0,0,.5)); }
-.export:hover { transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 4px rgba(0,0,0,.45), 0 0 26px rgba(201,167,255,1), 0 0 60px rgba(168,85,247,.55), 0 3px 8px rgba(0,0,0,.7); }
+.export:hover { transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 4px rgba(0,0,0,.45), 0 0 26px rgba(var(--accent-hot-rgb), 1), 0 0 60px rgba(var(--accent-rgb), .55), 0 3px 8px rgba(0,0,0,.7); }
 .export:active { transform: translateY(0); }
 .export.flash { animation: expFlash .8s ease; }
 
 @keyframes expFlash {
-  0% { box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 16px rgba(168,85,247,.8), 0 0 40px rgba(124,58,237,.4); }
-  40% { box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 44px rgba(201,167,255,1), 0 0 110px rgba(168,85,247,.85); }
-  100% { box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 16px rgba(168,85,247,.8), 0 0 40px rgba(124,58,237,.4); }
+  0% { box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 16px rgba(var(--accent-rgb), .8), 0 0 40px rgba(var(--accent-2-rgb), .4); }
+  40% { box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 44px rgba(var(--accent-hot-rgb), 1), 0 0 110px rgba(var(--accent-rgb), .85); }
+  100% { box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 16px rgba(var(--accent-rgb), .8), 0 0 40px rgba(var(--accent-2-rgb), .4); }
 }
 
 /* ── micro strip ─────────────────────────────────────────────────── */
@@ -573,8 +612,8 @@ body {
   width: 1px;
   height: 16px;
   flex: 0 0 1px;
-  background: linear-gradient(180deg, transparent, var(--purple-hot), transparent);
-  box-shadow: 0 0 8px rgba(168, 85, 247, .85);
+  background: linear-gradient(180deg, transparent, var(--accent-hot), transparent);
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), .85);
 }
 
 .foot-copy {
@@ -647,29 +686,29 @@ body {
   white-space: nowrap;
 }
 .chip em { font-style: normal; font-weight: 500; letter-spacing: .1em; color: #3c3c46; }
-.chip:hover { filter: brightness(1.15); box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 3px rgba(0,0,0,.55), 0 2px 5px rgba(0,0,0,.7), 0 0 14px rgba(168,85,247,.7); }
+.chip:hover { filter: brightness(1.15); box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 3px rgba(0,0,0,.55), 0 2px 5px rgba(0,0,0,.7), 0 0 14px rgba(var(--accent-rgb), .7); }
 .chip.active {
-  color: #f6effe;
-  background: linear-gradient(180deg, #a855f7, #6d28d9);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 16px rgba(168,85,247,.85), 0 2px 5px rgba(0,0,0,.7);
+  color: var(--on-accent);
+  background: linear-gradient(180deg, var(--btn-1), var(--btn-2));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 16px rgba(var(--accent-rgb), .85), 0 2px 5px rgba(0,0,0,.7);
 }
-.chip.active em { color: #d9c2ff; }
+.chip.active em { color: inherit; opacity: .78; }
 
 .now {
   margin-left: auto;
   font-size: 7.5px;
   font-weight: 500;
   letter-spacing: .22em;
-  color: var(--purple-hot);
-  text-shadow: 0 0 8px rgba(201,167,255,.55);
+  color: var(--accent-hot);
+  text-shadow: 0 0 8px rgba(var(--accent-hot-rgb), .55);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .scope.drop-hover {
-  border-color: #7c3aed;
-  box-shadow: inset 0 3px 14px rgba(0,0,0,1), inset 0 0 60px rgba(124,58,237,.35), 0 0 20px rgba(168,85,247,.8);
+  border-color: var(--accent-2);
+  box-shadow: inset 0 3px 14px rgba(0,0,0,1), inset 0 0 60px rgba(var(--accent-2-rgb), .35), 0 0 20px rgba(var(--accent-rgb), .8);
 }
 
 body.in-frame { min-height: 0; padding: 8px; background: #040405; }
@@ -691,15 +730,15 @@ body.in-frame .plugin { width: 100%; }
   border-radius: 50%;
   border: 1px solid #000;
   color: #1a0b26;
-  background: radial-gradient(circle at 35% 30%, #fff, #d8c4ff 42%, #8b5cf6 70%, #4c1d95);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.75), inset 0 -3px 5px rgba(0,0,0,.45), 0 3px 0 #2a123f, 0 6px 14px rgba(0,0,0,.55);
+  background: radial-gradient(circle at 35% 30%, #fff, var(--accent-soft) 42%, var(--accent) 70%, var(--accent-dark));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.75), inset 0 -3px 5px rgba(0,0,0,.45), 0 3px 0 var(--accent-dark), 0 6px 14px rgba(0,0,0,.55);
   display: grid;
   place-items: center;
   cursor: pointer;
   padding: 0;
 }
 .play-main svg { width: 16px; height: 16px; margin-left: 2px; }
-.play-main:active { transform: translateY(2px); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 1px 0 #2a123f; }
+.play-main:active { transform: translateY(2px); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 1px 0 var(--accent-dark); }
 @media (max-width: 700px) {
   .transport { width: auto; }
 }
@@ -733,3 +772,16 @@ body { overflow-x: hidden; }
 @media (max-width: 380px) {
   .head-tools { flex-wrap: wrap; justify-content: flex-end; }
 }
+
+/* ── strain accent theme: inline-SVG fills + helpers ─────────────── */
+.crown path { stroke: var(--accent-hot); }
+.crown circle { fill: var(--accent-hot); }
+.knob-dial rect:first-child { fill: var(--accent-pale); }
+.knob-dial rect:nth-child(2) { fill: var(--accent-hot); }
+@media (prefers-reduced-motion: reduce) {
+  .knob-wrap, .led-ring { transition: none !important; }
+}
+/* while the accent is easing (~0.5 s) the per-frame colour steps drive every themed property directly, so per-element
+   colour/shadow transitions are paused: otherwise each of the 60 steps restarts a 0.25 s transition on dozens of glowing elements.
+   The drawer's own slide / stagger transitions are left alone. */
+html.hs-theming *:not(.fx-drawer):not(.fx-backdrop):not(.drawer-lip):not(.fx-mod):not(.fx-grip) { transition: none !important; }
