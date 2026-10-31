@@ -231,11 +231,11 @@
     "#e3c04a", // 05 Double Akorne
     "#c9aef0", // 06 Qualli Rinse
     "#3f6df2", // 07 Holy Tuss
-    "#8420d6", // 08 Hi-Tekk Purp Dreamz
+    "#8a2be2", // 08 Hi-Tekk Purp Dreamz
     "#0fa5a0", // 09 Echo Ackt
     "#4650d8", // 10 Midnight Wockk
     "#d08a9a", // 11 Dusty Qualli
-    "#7b3fa0", // 12 Roxx Grape Rain
+    "#8a4aae", // 12 Roxx Grape Rain
     "#4caf6a", // 13 Basement Barr
     "#ffc2dc", // 14 Triss Light
     "#4cb8ff", // 15 3AM Triss
