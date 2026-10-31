@@ -743,9 +743,83 @@ body.in-frame .plugin { width: 100%; }
   .transport { width: auto; }
 }
 
-.pass { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin: 8px 0 0; font: 700 9px "Barlow Condensed", sans-serif; letter-spacing: .12em; text-transform: uppercase; color: #c9a7ff; }
-.pass input, .pass button { font: 700 10px "JetBrains Mono", monospace; border-radius: 999px; border: 1px solid #3a2a4e; background: #120c1a; color: #f4ecff; padding: 6px 10px; }
-.pass button { cursor: pointer; background: #2a1840; }
+/* ── $4 license unlock (strain-accent themed: every colour comes from the accent variables) ── */
+.pass {
+  display: grid;
+  grid-template-columns: minmax(0, .7fr) auto minmax(0, 1.5fr);
+  grid-template-areas: "head buy key" "msg msg msg";
+  align-items: center;
+  gap: 8px 14px;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--accent-edge);
+  background: linear-gradient(180deg, rgba(var(--accent-well-rgb), .85), rgba(11, 9, 18, .9));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 0 22px rgba(var(--accent-rgb), .08);
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  color: var(--accent-hot);
+  min-width: 0;
+}
+.pass-head { grid-area: head; display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
+.pass-led { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #3b3548; box-shadow: inset 0 0 0 1px rgba(0,0,0,.5); }
+.pass-state { font: 700 10px "Space Grotesk", system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--accent-hot); min-width: 0; overflow-wrap: anywhere; }
+.pass-remove { display: none; font: 600 10px "Space Grotesk", system-ui, sans-serif; letter-spacing: .06em; color: var(--ink-dim, #8b8797); background: none; border: 0; text-decoration: underline; cursor: pointer; padding: 4px 2px; }
+.pass-remove:hover { color: var(--accent-hot); }
+.pass-buy {
+  grid-area: buy;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 40px; padding: 9px 18px; border-radius: 9px;
+  font: 700 11px "Space Grotesk", system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; text-decoration: none;
+  color: var(--on-accent);
+  background: linear-gradient(180deg, var(--btn-1) 0%, var(--btn-2) 55%, var(--btn-3) 100%);
+  border: 1px solid var(--accent-soft);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 4px rgba(0,0,0,.45), 0 0 16px rgba(var(--accent-rgb), .6), 0 3px 8px rgba(0,0,0,.6);
+  text-shadow: 0 1px 1px rgba(0,0,0,.6);
+  transition: transform .15s, box-shadow .2s;
+  text-align: center;
+}
+.pass-buy svg { flex: none; width: 15px; height: 15px; }
+.pass-buy b { font-weight: 700; font-size: 13px; letter-spacing: .04em; }
+.pass-buy:hover { transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 4px rgba(0,0,0,.45), 0 0 26px rgba(var(--accent-hot-rgb), .9), 0 3px 8px rgba(0,0,0,.7); }
+.pass-buy:focus-visible, .pass-key input:focus-visible, .pass-key button:focus-visible, .pass-retry:focus-visible, .pass-remove:focus-visible { outline: 2px solid var(--accent-hot); outline-offset: 2px; }
+.pass-key { grid-area: key; display: flex; gap: 6px; min-width: 0; }
+.pass-key input {
+  flex: 1 1 auto; min-width: 0; height: 36px; padding: 0 12px; border-radius: 8px;
+  font: 600 12px "JetBrains Mono", ui-monospace, monospace; letter-spacing: .04em;
+  color: var(--accent-pale); background: rgba(0,0,0,.45); border: 1px solid var(--accent-edge);
+}
+.pass-key input::placeholder { color: #8b8797; }
+.pass-key button, .pass-retry {
+  flex: none; height: 36px; padding: 0 14px; border-radius: 8px; cursor: pointer;
+  font: 700 10px "Space Grotesk", system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--accent-pale); background: rgba(var(--accent-rgb), .18); border: 1px solid var(--accent-edge-2);
+}
+.pass-key button:hover, .pass-retry:hover { background: rgba(var(--accent-rgb), .32); }
+.pass-key button:disabled, .pass-key input:disabled { opacity: .6; cursor: progress; }
+.pass-msg { grid-area: msg; text-align: left; min-height: 0; font: 500 11px/1.45 "Space Grotesk", system-ui, sans-serif; letter-spacing: .02em; color: #b8b3c6; overflow-wrap: anywhere; }
+.pass-msg:empty { display: none; }
+.pass-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.pass[data-state="checking"] .pass-led { background: var(--accent-hot); animation: passPulse 1s ease-in-out infinite; }
+.pass[data-state="unlocked"] { border-color: var(--accent-edge-2); box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 0 26px rgba(var(--accent-rgb), .22); }
+.pass[data-state="unlocked"] .pass-led { background: var(--accent-hot); box-shadow: 0 0 10px var(--accent-glow); }
+.pass[data-state="unlocked"] .pass-buy, .pass[data-state="unlocked"] .pass-key { display: none; }
+.pass[data-state="unlocked"] { grid-template-areas: "head head head" "msg msg msg"; }
+.pass[data-state="unlocked"] .pass-remove { display: inline; margin-left: auto; }
+.pass[data-state="unlocked"] .pass-msg { color: var(--accent-soft); }
+.pass[data-state="invalid"] .pass-led, .pass[data-state="refunded"] .pass-led, .pass[data-state="cap"] .pass-led, .pass[data-state="network"] .pass-led { background: #ffb454; box-shadow: 0 0 8px rgba(255,180,84,.6); }
+.pass[data-state="invalid"] .pass-msg, .pass[data-state="refunded"] .pass-msg, .pass[data-state="cap"] .pass-msg, .pass[data-state="network"] .pass-msg { color: #ffd9a3; }
+.pass[data-state="invalid"] .pass-key input { border-color: #ffb454; }
+.pass-retry[hidden] { display: none; }
+@keyframes passPulse { 50% { opacity: .3; } }
+@media (max-width: 760px) {
+  .pass { grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "buy" "key" "msg"; gap: 8px; padding: 10px; }
+  .pass-buy { width: 100%; min-height: 44px; }
+  .pass-key input, .pass-key button { height: 42px; }
+  .pass-key input { font-size: 16px; }              /* >=16px stops iOS zooming into the field */
+  .pass[data-state="unlocked"] { grid-template-areas: "head" "msg"; }
+}
+@media (prefers-reduced-motion: reduce) { .pass-led, .pass-buy { animation: none !important; transition: none !important; } }
 
 
 /* ── v32: knob interaction + phone layout polish ─────────────────── */
@@ -760,8 +834,6 @@ body { overflow-x: hidden; }
   .plugin { padding: 10px 10px 8px; }
   .track-bar { gap: 6px; }
   .now { font-size: 7px; white-space: normal; line-height: 1.5; }
-  .pass { gap: 6px; }
-  .pass input { flex: 1 1 130px; min-width: 0; }
   .foot-line { flex-wrap: wrap; justify-content: center; overflow: visible; }
   .foot-controls .mix-row { flex: 1 1 100%; justify-content: center; }
   .foot-controls .mix-row input[type="range"] { width: min(180px, 52vw); }

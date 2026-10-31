@@ -7,8 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=43">
-<link rel="stylesheet" href="halfscrew-drawer.css?v=43">
+<link rel="stylesheet" href="style.css?v=44">
+<link rel="stylesheet" href="halfscrew-drawer.css?v=44">
 </head>
 <body>
 <script>if(window.parent!==window)document.body.classList.add("in-frame");</script>
@@ -91,13 +91,24 @@
 
     <!-- ── micro strip ─────────────────────────────────────── -->
     
-<div class="pass" id="pass">
-  <span id="passState">Demo · 20 second export</span>
-  <button type="button" id="buyBtn">Unlock $19</button>
-  <button type="button" id="checkBtn">Check order</button>
-  <input id="passMail" type="email" placeholder="Email" aria-label="Email">
-  <button type="button" id="passBtn">Apply</button>
-</div>
+<section class="pass" id="pass" data-state="locked" aria-label="Unlock unlimited exports">
+  <div class="pass-head">
+    <span class="pass-led" aria-hidden="true"></span>
+    <span class="pass-state" id="passState">Demo · 20 second export</span>
+    <button type="button" class="pass-remove" id="licenseRemove">Remove from this browser</button>
+  </div>
+  <a class="pass-buy" id="buyBtn" href="https://nodaw.gumroad.com" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 9.6-2M5 11h14v9H5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="pass-buy-txt">Unlock unlimited exports <span aria-hidden="true">—</span> <b id="buyPrice">$4</b></span>
+  </a>
+  <form class="pass-key" id="licenseForm" aria-label="Enter license key" novalidate>
+    <label class="pass-sr" for="licenseKey">License key</label>
+    <input id="licenseKey" name="licenseKey" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="100" placeholder="Enter license key">
+    <button type="submit" id="licenseBtn">Activate</button>
+    <button type="button" class="pass-retry" id="licenseRetry" hidden>Retry</button>
+  </form>
+  <p class="pass-msg" id="licenseMsg" role="status" aria-live="polite"></p>
+</section>
 
     <footer class="strip">
       <div class="foot-controls">
@@ -139,12 +150,14 @@
   <p class="hint">tap the wave to jump · drag it to scan · drop a song on the display · open EQ · FX · STRAINS under the deck · export the screwed wav</p>
 </main>
 <script>window.OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;</script>
-<script src="halfscrew-dsp.js?v=43"></script>
-<script src="halfscrew-eq.js?v=43"></script>
-<script src="halfscrew-fx.js?v=43"></script>
-<script src="halfscrew-theme.js?v=43"></script>
-<script src="halfscrew.js?v=43"></script>
-<script src="halfscrew-drawer.js?v=43"></script>
+<script src="halfscrew-config.js?v=44"></script>
+<script src="halfscrew-license.js?v=44"></script>
+<script src="halfscrew-dsp.js?v=44"></script>
+<script src="halfscrew-eq.js?v=44"></script>
+<script src="halfscrew-fx.js?v=44"></script>
+<script src="halfscrew-theme.js?v=44"></script>
+<script src="halfscrew.js?v=44"></script>
+<script src="halfscrew-drawer.js?v=44"></script>
 
 <script>
 window.OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
@@ -214,47 +227,6 @@ window.addEventListener("load", function () {
 </script>
 
 <script>
-</script>
-<script>
-(function () {
-  const ADMINS = ["myaiplug", "nodaw", "bz", "bthirtthreezy", "thebeatmob", "beez"];
-  const state = document.getElementById("passState");
-  function read() { try { return JSON.parse(localStorage.getItem("halfscrew-pass") || "{}"); } catch (e) { return {}; } }
-  function paint() {
-    const saved = read();
-    const mail = String(saved.email || "").toLowerCase();
-    const admin = saved.admin || ADMINS.some((a) => mail.includes(a));
-    const full = admin || saved.paid;
-    if (state) state.textContent = admin ? "Admin · full export" : full ? "Unlimited · full export" : "Demo · 20 second export";
-  }
-  document.getElementById("buyBtn").onclick = () => window.open("https://shop.nodawlabs.com/cart/67934696767794:1?checkout", "_blank");
-  document.getElementById("checkBtn").onclick = async () => {
-    const email = document.getElementById("passMail").value.trim().toLowerCase();
-    if (!email) { if (state) state.textContent = "Enter the checkout email"; return; }
-    if (state) state.textContent = "Checking Shopify…";
-    try {
-      const res = await fetch("https://halfscrew-order-myaiplugs-projects.vercel.app/api/shopify-order", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email })
-      });
-      const data = await res.json();
-      if (data.ok) {
-        localStorage.setItem("halfscrew-pass", JSON.stringify({ email, admin: false, paid: true, order: data.order }));
-        if (state) state.textContent = "Paid · " + (data.order || "full export");
-      } else if (state) state.textContent = data.error || "No paid order";
-    } catch (e) {
-      if (state) state.textContent = "Order check unavailable";
-    }
-  };
-  document.getElementById("passBtn").onclick = () => {
-    const email = document.getElementById("passMail").value.trim().toLowerCase();
-    const admin = ADMINS.some((a) => email.includes(a));
-    localStorage.setItem("halfscrew-pass", JSON.stringify({ email, admin }));
-    paint();
-  };
-  paint();
-})();
 </script>
 </body>
 </html>
