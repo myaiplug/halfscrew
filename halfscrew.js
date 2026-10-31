@@ -312,8 +312,8 @@ function ensureGraph() {
   engine.graph = (async () => {
     engine.chain = HSFX.buildChain(ctx);
     try {
-      await ctx.audioWorklet.addModule("halfscrew-dsp.js?v=3");
-      await ctx.audioWorklet.addModule("halfscrew-worklet.js?v=2");
+      await ctx.audioWorklet.addModule("halfscrew-dsp.js?v=41");
+      await ctx.audioWorklet.addModule("halfscrew-worklet.js?v=41");
       engine.worklet = new AudioWorkletNode(ctx, "halfscrew-processor", { outputChannelCount: [2] });
       engine.limiter = new AudioWorkletNode(ctx, "halfscrew-limiter", { outputChannelCount: [2], channelCount: 2, channelCountMode: "explicit" });
       engine.worklet.port.onmessage = (e) => {
