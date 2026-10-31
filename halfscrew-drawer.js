@@ -133,7 +133,7 @@
     const rows = STRAINS.filter((s) => famFilter === "ALL" || FAMILIES[s.fam] === famFilter || s.id === 0);
     list.innerHTML = rows.map((s) => `<button type="button" role="option" class="strain" data-id="${s.id}" aria-selected="${s.id === currentId}" tabindex="${s.id === currentId || (currentId === null && s.id === 0) ? 0 : -1}">
       <span class="s-no">${s.id ? String(s.id).padStart(2, "0") : "—"}</span>
-      <span class="s-name">${s.name}</span>
+      <span class="s-name"><i class="s-sw" aria-hidden="true" style="--sw:${s.hex}"></i><span>${s.name}</span></span>
       <span class="s-meta"><em>T</em>${s.time}<em>P</em>${s.pitch > 0 ? "+" : ""}${s.pitch}<em>W</em>${s.wow}</span>
       <span class="s-fx">${["rev", "del", "cho", "dis"].filter((k) => s[k]).map((k) => `<i class="tag-${k}" title="${k}"></i>`).join("")}</span>
     </button>`).join("");
@@ -176,6 +176,7 @@
     setEqOn(true);
     loading = false;
     currentId = s.id;
+    if (window.HSTheme && s.hex) HSTheme.set(s.hex);   /* whole UI eases to this strain's colour; knob edits afterwards keep it, Original = purple */
     $$(".strain", list).forEach((b) => { const on = +b.dataset.id === s.id; b.setAttribute("aria-selected", on); b.tabIndex = on ? 0 : -1; });
     notify();
     const np = document.getElementById("nowPlaying");
@@ -282,7 +283,7 @@
     if (spec && engine.playing && engine.ctx.state === "running") {
       spec.getByteFrequencyData(specBuf);
       const sr = engine.ctx.sampleRate, bins = specBuf.length, B = 72;
-      sctx.fillStyle = "rgba(168,85,247,.28)";
+      sctx.fillStyle = (window.HSTheme && HSTheme.cv.spec) || "rgba(168,85,247,.28)";
       for (let i = 0; i < B; i++) {
         const f0 = FMIN * Math.pow(FMAX / FMIN, i / B), f1 = FMIN * Math.pow(FMAX / FMIN, (i + 1) / B);
         const b0 = Math.max(1, Math.floor((f0 / (sr / 2)) * bins)), b1 = Math.max(b0 + 1, Math.ceil((f1 / (sr / 2)) * bins));

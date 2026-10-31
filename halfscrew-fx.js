@@ -230,32 +230,63 @@
   }
   const STRAINS = [
     S(0, 0, "Original", 100, 0, 0, [0, 0, 0]),
-    S(1, 1, "Pure Tape Screw", 80, 0, 0, [2, 0, -2]),
-    S(2, 1, "Syrup Pour", 78, 0, 10, [3, 0, -3], { dis: 8 }),
-    S(3, 1, "Deep South Drag", 72, 0, 0, [4, -1, -4], { dis: 10 }),
-    S(4, 1, "Half Screw", 89, 0, 0, [2, 0, -2]),
-    S(5, 1, "Double Cup", 80, -1, 0, [4, 0, -3], { del: 12 }),
-    S(6, 2, "Slowed 90 + Wash", 90, 0, 0, [1, 0, -2], { rev: 30 }),
-    S(7, 2, "Cathedral Slow", 85, 0, 0, [0, -1, -1], { rev: 55 }),
-    S(8, 2, "Dream Room", 88, 0, 20, [1, 0, -1], { rev: 40, cho: 18 }),
-    S(9, 2, "Echo Chamber", 90, -1, 0, [0, 0, -2], { rev: 28, del: 30 }),
-    S(10, 2, "Midnight Drive", 92, 0, 6, [2, 1, -2], { rev: 35 }),
-    S(11, 3, "Dusty Cassette", 94, 0, 15, [1, 2, -7], { dis: 14, cho: 10 }),
-    S(12, 3, "Rainy Window", 90, 0, 12, [0, 1, -5], { rev: 25, cho: 12 }),
-    S(13, 3, "Basement Tape", 96, 0, 20, [2, 2, -8], { dis: 20 }),
-    S(14, 3, "Study Break", 92, 1, 5, [0, 1, -4], { rev: 15 }),
-    S(15, 3, "3AM Radio", 97, 0, 10, [-2, 4, -6], { dis: 18, rev: 12 }),
-    S(16, 4, "Wobble Wheel", 96, 0, 35, [0, 0, -2], { cho: 22 }),
-    S(17, 4, "Sea-Sick Tape", 94, 0, 80, [1, 0, -3], { cho: 30, rev: 14 }),
-    S(18, 4, "Worn Reel", 93, 0, 50, [1, 1, -5], { dis: 12, cho: 15 }),
-    S(19, 4, "Wow & Flutter Lite", 98, 0, 20, [0, 0, -1], { cho: 12 }),
-    S(20, 4, "Melted VHS", 88, 0, 100, [-1, 2, -6], { dis: 14, cho: 28, rev: 15 }),
-    S(21, 5, "True Halftime", 50, 0, 0, [3, 0, -1], { rev: 8 }),
-    S(22, 5, "Halftime Heavy", 50, -2, 0, [5, -1, -3], { dis: 12, rev: 10 }),
-    S(23, 5, "Three-Quarter Swing", 75, 0, 0, [2, 0, 0], { del: 14 }),
-    S(24, 5, "Warehouse Drag", 60, -1, 0, [4, 0, -2], { rev: 22, dis: 10 }),
-    S(25, 5, "Peak-Hour Slow-Mo", 65, 1, 0, [3, 1, 1], { del: 18, rev: 12 }),
+    S(1, 1, "Wokkie Classic", 80, 0, 0, [2, 0, -2]),
+    S(2, 1, "Tussy Pour", 78, 0, 10, [3, 0, -3], { dis: 8 }),
+    S(3, 1, "Barrel Bottom", 72, 0, 0, [4, -1, -4], { dis: 10 }),
+    S(4, 1, "Half Tris", 89, 0, 0, [2, 0, -2]),
+    S(5, 1, "Double Akorny", 80, -1, 0, [4, 0, -3], { del: 12 }),
+    S(6, 2, "Purple Rinse", 90, 0, 0, [1, 0, -2], { rev: 30 }),
+    S(7, 2, "Holy Tuss", 85, 0, 0, [0, -1, -1], { rev: 55 }),
+    S(8, 2, "Lavender Dreamz", 88, 0, 20, [1, 0, -1], { rev: 40, cho: 18 }),
+    S(9, 2, "Echo Akt", 90, -1, 0, [0, 0, -2], { rev: 28, del: 30 }),
+    S(10, 2, "Midnight Wokk", 92, 0, 6, [2, 1, -2], { rev: 35 }),
+    S(11, 3, "Dusty Bottle", 94, 0, 15, [1, 2, -7], { dis: 14, cho: 10 }),
+    S(12, 3, "Grape Rain", 90, 0, 12, [0, 1, -5], { rev: 25, cho: 12 }),
+    S(13, 3, "Basement Barr", 96, 0, 20, [2, 2, -8], { dis: 20 }),
+    S(14, 3, "Light Pour", 92, 1, 5, [0, 1, -4], { rev: 15 }),
+    S(15, 3, "3AM Tris", 97, 0, 10, [-2, 4, -6], { dis: 18, rev: 12 }),
+    S(16, 4, "Wobbly Wokk", 96, 0, 35, [0, 0, -2], { cho: 22 }),
+    S(17, 4, "Sea-Sick Sip", 94, 0, 80, [1, 0, -3], { cho: 30, rev: 14 }),
+    S(18, 4, "Old Roxxy", 93, 0, 50, [1, 1, -5], { dis: 12, cho: 15 }),
+    S(19, 4, "Tuss Lite", 98, 0, 20, [0, 0, -1], { cho: 12 }),
+    S(20, 4, "Melted Styro", 88, 0, 100, [-1, 2, -6], { dis: 14, cho: 28, rev: 15 }),
+    S(21, 5, "Half Pint", 50, 0, 0, [3, 0, -1], { rev: 8 }),
+    S(22, 5, "Full Pint", 50, -2, 0, [5, -1, -3], { dis: 12, rev: 10 }),
+    S(23, 5, "¾ Cup Swing", 75, 0, 0, [2, 0, 0], { del: 14 }),
+    S(24, 5, "Warehouse Barrel", 60, -1, 0, [4, 0, -2], { rev: 22, dis: 10 }),
+    S(25, 5, "Akt Right", 65, 1, 0, [3, 1, 1], { del: 18, rev: 12 }),
   ];
+
+  /* Each strain's syrup colour: drives the whole UI theme (see halfscrew-theme.js). Original stays the HalfScrew purple. */
+  const STRAIN_HEX = [
+    "#a855f7", // 00 Original
+    "#b52bc4", // 01 Wokkie Classic
+    "#ff9a1f", // 02 Tussy Pour
+    "#b0304f", // 03 Barrel Bottom
+    "#e8294b", // 04 Half Tris
+    "#e3c04a", // 05 Double Akorny
+    "#c9aef0", // 06 Purple Rinse
+    "#3f6df2", // 07 Holy Tuss
+    "#a99cff", // 08 Lavender Dreamz
+    "#0fa5a0", // 09 Echo Akt
+    "#4650d8", // 10 Midnight Wokk
+    "#d08a9a", // 11 Dusty Bottle
+    "#7b5ef0", // 12 Grape Rain
+    "#4caf6a", // 13 Basement Barr
+    "#ffc2dc", // 14 Light Pour
+    "#4cb8ff", // 15 3AM Tris
+    "#a8e03a", // 16 Wobbly Wokk
+    "#7dd8a0", // 17 Sea-Sick Sip
+    "#b8532c", // 18 Old Roxxy
+    "#f5eb9c", // 19 Tuss Lite
+    "#cfe3ff", // 20 Melted Styro
+    "#ffb694", // 21 Half Pint
+    "#ff5a2e", // 22 Full Pint
+    "#5ef0f0", // 23 ¾ Cup Swing
+    "#a9854f", // 24 Warehouse Barrel
+    "#ff3d9a", // 25 Akt Right
+  ];
+  STRAINS.forEach((st, i) => { st.hex = STRAIN_HEX[i]; });
 
   window.HSFX = {
     EQ_FREQ, EQ_Q, FX_KEYS, FAMILIES, STRAINS, TC, defaults,

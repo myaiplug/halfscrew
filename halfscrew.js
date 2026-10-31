@@ -657,7 +657,7 @@ function drawScope() {
   const midY = H / 2 - 4;
 
   // grid
-  ctx.strokeStyle = "rgba(124, 58, 237, 0.12)";
+  ctx.strokeStyle = (window.HSTheme ? HSTheme.cv.grid : "rgba(124, 58, 237, 0.12)");
   ctx.lineWidth = 1;
   for (let gx = 20; gx < W; gx += 56) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke(); }
   for (let gy = 12; gy < H; gy += 22) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); }
@@ -674,22 +674,22 @@ function drawScope() {
       const x = i * 3;
       if (i <= lit) {
         const g = ctx.createLinearGradient(0, midY - h / 2, 0, midY + h / 2);
-        g.addColorStop(0, "rgba(238, 224, 255, 0.98)");
-        g.addColorStop(0.5, "rgba(178, 108, 255, 0.92)");
-        g.addColorStop(1, "rgba(238, 224, 255, 0.98)");
+        g.addColorStop(0, (window.HSTheme ? HSTheme.cv.barA : "rgba(238, 224, 255, 0.98)"));
+        g.addColorStop(0.5, (window.HSTheme ? HSTheme.cv.barB : "rgba(178, 108, 255, 0.92)"));
+        g.addColorStop(1, (window.HSTheme ? HSTheme.cv.barA : "rgba(238, 224, 255, 0.98)"));
         ctx.fillStyle = g;
-        ctx.shadowColor = "rgba(168, 85, 247, 0.85)";
+        ctx.shadowColor = (window.HSTheme ? HSTheme.cv.glow : "rgba(168, 85, 247, 0.85)");
         ctx.shadowBlur = 9;
         const bw = window.scopeBars ? 2.6 : 1.7;
     ctx.fillRect(x, midY - h / 2, bw, h);
         ctx.shadowBlur = 0;
-        ctx.fillStyle = "rgba(178, 108, 255, 0.12)";
+        ctx.fillStyle = (window.HSTheme ? HSTheme.cv.dim : "rgba(178, 108, 255, 0.12)");
         ctx.fillRect(x, midY + 4, 1.7, h * 0.3);
       } else {
-        ctx.fillStyle = "rgba(178, 108, 255, 0.35)";
+        ctx.fillStyle = (window.HSTheme ? HSTheme.cv.rest : "rgba(178, 108, 255, 0.35)");
         const bw = window.scopeBars ? 2.6 : 1.7;
     ctx.fillRect(x, midY - h / 2, bw, h);
-        ctx.fillStyle = "rgba(178, 108, 255, 0.07)";
+        ctx.fillStyle = (window.HSTheme ? HSTheme.cv.rest2 : "rgba(178, 108, 255, 0.07)");
         ctx.fillRect(x, midY + 4, 1.7, h * 0.3);
       }
     }
@@ -699,16 +699,16 @@ function drawScope() {
       const h = synthWave(0, x + offset, 0.8) * H * 0.55;
       if (!(h > 0.4)) continue;
       const g = ctx.createLinearGradient(0, midY - h / 2, 0, midY + h / 2);
-      g.addColorStop(0, "rgba(238, 224, 255, 0.98)");
-      g.addColorStop(0.5, "rgba(178, 108, 255, 0.92)");
-      g.addColorStop(1, "rgba(238, 224, 255, 0.98)");
+      g.addColorStop(0, (window.HSTheme ? HSTheme.cv.barA : "rgba(238, 224, 255, 0.98)"));
+      g.addColorStop(0.5, (window.HSTheme ? HSTheme.cv.barB : "rgba(178, 108, 255, 0.92)"));
+      g.addColorStop(1, (window.HSTheme ? HSTheme.cv.barA : "rgba(238, 224, 255, 0.98)"));
       ctx.fillStyle = g;
-      ctx.shadowColor = "rgba(168, 85, 247, 0.85)";
+      ctx.shadowColor = (window.HSTheme ? HSTheme.cv.glow : "rgba(168, 85, 247, 0.85)");
       ctx.shadowBlur = 9;
       const bw = window.scopeBars ? 2.6 : 1.7;
     ctx.fillRect(x, midY - h / 2, bw, h);
       ctx.shadowBlur = 0;
-      ctx.fillStyle = "rgba(178, 108, 255, 0.12)";
+      ctx.fillStyle = (window.HSTheme ? HSTheme.cv.dim : "rgba(178, 108, 255, 0.12)");
       ctx.fillRect(x, midY + 4, 1.7, h * 0.3);
     }
   }
