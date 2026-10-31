@@ -33,14 +33,14 @@ window.addEventListener("unhandledrejection", (e) => showErr(e.reason));
 
 /* ── shared parameter state ───────────────────────────────────── */
 
-window.params = { time: 100, pitch: 0, wow: 25, mix: 100 };
+window.params = HSFX.defaults();
 window.engine = {
   ctx: null, buffer: null, trackName: "",
-  dry: null, wet: null, dryGain: null, wetGain: null,
+  chain: null, worklet: null, limiter: null, fallbackSrc: null, graph: null, fallback: false,
   master: null, analyser: null, playing: false, paused: false, startAt: 0,
   offset: 0, loopEnd: 0, wake: null,
+  pos: 0, posT: 0, step: 1, sentBuffer: null, gr: 1,
 };
-
 
 const FMT = {
   time: (v) => `${Math.round(v)}% ${Math.round(v) === 100 ? "HALFTIME" : "SCREW"}`,
@@ -49,170 +49,341 @@ const FMT = {
     return `${n > 0 ? "+" : ""}${n} SEMITONE${Math.abs(n) === 1 ? "" : "S"}`;
   },
   pct: (v) => `${Math.round(v)}%`,
+  db: (v) => `${v > 0 ? "+" : ""}${(Math.round(v * 2) / 2).toFixed(1)} dB`,
 };
 
-document.querySelectorAll(".knob-wrap").forEach((wrap) => {
+/* ── knobs: pointer-event drag with inertia, fine-adjust, keyboard, type-in ──
+   - drag up/down (140 px = full travel); hold Shift/Ctrl/Alt, or add a second finger, for 10x fine
+   - the dial and LED ring glide to the target (critically damped); audio is smoothed separately
+   - double-click / double-tap resets, arrow keys / PageUp/PageDown / Home / End, tap the value to type */
+
+const REDUCED_MOTION = window.matchMedia ? matchMedia("(prefers-reduced-motion: reduce)") : { matches: false };
+const knobAnim = new Set();
+let knobRaf = 0, knobLast = 0;
+function knobPump(now) {
+  const dt = Math.min(0.05, Math.max(0.001, (now - knobLast) / 1000));
+  knobLast = now;
+  knobAnim.forEach((k) => { if (!k.tick(dt)) knobAnim.delete(k); });
+  knobRaf = knobAnim.size ? requestAnimationFrame(knobPump) : 0;
+}
+function knobWake(k) {
+  knobAnim.add(k);
+  if (!knobRaf) { knobLast = performance.now(); knobRaf = requestAnimationFrame(knobPump); }
+}
+
+window.knobSet = window.knobSet || {};
+function initKnob(wrap) {
+  if (wrap.__knob) return wrap.__knob;
   const min = +wrap.dataset.min;
   const max = +wrap.dataset.max;
+  const step = +wrap.dataset.step || 1;
+  const def = +wrap.dataset.val;
   const fmt = FMT[wrap.dataset.fmt];
   const key = wrap.dataset.knob;
   const ring = $(".led-ring", wrap);
   const dial = $(".knob-dial", wrap);
-  const read = $(`#read-${key}`);
+  const read = document.getElementById(`read-${key}`);
+  const label = wrap.dataset.label || (wrap.closest(".knob-unit") && $(".knob-name", wrap.closest(".knob-unit")) ? $(".knob-name", wrap.closest(".knob-unit")).textContent : key);
+  const q = (v) => {
+    const n = Math.round((Math.min(max, Math.max(min, v)) - min) / step) * step + min;
+    return +Math.min(max, Math.max(min, n)).toFixed(4);
+  };
 
-  let val = +wrap.dataset.val;
-  let startY = 0, prevVal = 0, active = false;
+  let val = q(def), raw = val, shown = val, editing = false;
+  const ids = new Set();
+  let primary = null, lastY = 0, downAt = 0, downX = 0, downY = 0, moved = 0, lastTapAt = 0, lastTapX = 0, lastTapY = 0, fine = false;
 
-  function render() {
-    const pct = (val - min) / (max - min);
+  wrap.setAttribute("role", "slider");
+  wrap.tabIndex = 0;
+  wrap.setAttribute("aria-label", label);
+  wrap.setAttribute("aria-valuemin", min);
+  wrap.setAttribute("aria-valuemax", max);
+
+  function paint(v) {
+    const pct = (v - min) / (max - min);
     ring.style.setProperty("--arc", `${pct * 288}deg`);
     dial.style.transform = `rotate(${-144 + pct * 288}deg)`;
-    if (read) read.textContent = fmt(val);
+  }
+  function commit() {
     params[key] = val;
+    wrap.setAttribute("aria-valuenow", val);
+    const txt = fmt(val);
+    wrap.setAttribute("aria-valuetext", txt);
+    if (read && !editing) read.textContent = txt;
+    if (key === "mix") {
+      const s = document.getElementById("mix");
+      if (s && +s.value !== val) { s.value = val; s.style.setProperty("--fill", `${val}%`); }
+      const r = document.getElementById("mix-read"); if (r) r.textContent = Math.round(val);
+    }
     applyParams();
+    window.dispatchEvent(new CustomEvent("hs-param", { detail: { key, value: val } }));
+  }
+  const api = {
+    key,
+    get value() { return val; },
+    set(next, opts) {
+      const nv = q(next);
+      raw = Math.min(max, Math.max(min, next));
+      const changed = nv !== val;
+      val = nv;
+      if (opts && opts.snap) shown = val;
+      if (changed || (opts && opts.force)) commit();
+      if (REDUCED_MOTION.matches) { shown = val; paint(shown); } else knobWake(api);
+    },
+    reset() { api.set(def); },
+    tick(dt) {
+      if (shown === val) return false;
+      const d = val - shown;
+      if (Math.abs(d) < (max - min) * 0.0004) { shown = val; paint(shown); return false; }
+      shown += d * (1 - Math.exp(-dt / 0.065));
+      paint(shown);
+      return true;
+    },
+  };
+  wrap.__knob = api;
+
+  function pointerDown(e) {
+    if (e.button > 0 && e.pointerType === "mouse") return;
+    if (editing) return;
+    ids.add(e.pointerId);
+    if (ids.size === 1) {
+      primary = e.pointerId; lastY = e.clientY; downAt = performance.now(); downX = e.clientX; downY = e.clientY; moved = 0;
+      wrap.classList.add("dragging");
+      try { wrap.setPointerCapture(e.pointerId); } catch (_) {}
+      wrap.focus({ preventScroll: true });
+    } else {
+      fine = true;                                   /* second finger = fine adjust */
+      wrap.classList.add("fine");
+    }
+    e.preventDefault();
+  }
+  /* a second finger anywhere on screen while one finger drags this knob also means fine-adjust */
+  document.addEventListener("pointerdown", (e) => {
+    if (primary === null || e.pointerId === primary || e.pointerType === "mouse") return;
+    fine = true; wrap.classList.add("fine");
+  }, true);
+  function pointerMove(e) {
+    if (e.pointerId !== primary || !ids.has(primary)) return;
+    const dy = lastY - e.clientY;
+    lastY = e.clientY;
+    moved = Math.max(moved, Math.hypot(e.clientX - downX, e.clientY - downY));
+    const mod = e.shiftKey || e.ctrlKey || e.altKey || fine;
+    wrap.classList.toggle("fine", mod);
+    raw = Math.min(max, Math.max(min, raw + (dy / 140) * (max - min) * (mod ? 0.1 : 1)));
+    const nv = q(raw);
+    if (nv !== val) { val = nv; commit(); }
+    if (REDUCED_MOTION.matches) { shown = val; paint(shown); } else knobWake(api);
+  }
+  function pointerUp(e) {
+    if (!ids.has(e.pointerId)) return;
+    ids.delete(e.pointerId);
+    if (e.pointerId === primary) {
+      const now = performance.now();
+      const tap = e.type === "pointerup" && moved < 6 && now - downAt < 350;
+      if (tap) {                                     /* double-tap / double-click => reset */
+        if (now - lastTapAt < 330 && Math.hypot(e.clientX - lastTapX, e.clientY - lastTapY) < 32) { api.reset(); lastTapAt = 0; }
+        else { lastTapAt = now; lastTapX = e.clientX; lastTapY = e.clientY; }
+      }
+      primary = null;
+      ids.clear();
+      fine = false;
+      wrap.classList.remove("dragging", "fine");
+      raw = val;
+    }
+  }
+  wrap.addEventListener("pointerdown", pointerDown);
+  wrap.addEventListener("pointermove", pointerMove);
+  wrap.addEventListener("pointerup", pointerUp);
+  wrap.addEventListener("pointercancel", pointerUp);
+  wrap.addEventListener("lostpointercapture", pointerUp);
+  wrap.addEventListener("keydown", (e) => {
+    const big = e.shiftKey ? 10 : 1;
+    let nv = null;
+    if (e.key === "ArrowUp" || e.key === "ArrowRight") nv = val + step * big;
+    else if (e.key === "ArrowDown" || e.key === "ArrowLeft") nv = val - step * big;
+    else if (e.key === "PageUp") nv = val + step * 10;
+    else if (e.key === "PageDown") nv = val - step * 10;
+    else if (e.key === "Home") nv = min;
+    else if (e.key === "End") nv = max;
+    else if (e.key === "Enter" && read) { e.preventDefault(); startEdit(); return; }
+    else if (e.key === "Backspace" || e.key === "Delete") { api.reset(); e.preventDefault(); return; }
+    if (nv !== null) { e.preventDefault(); api.set(nv); }
+  });
+  wrap.addEventListener("wheel", (e) => {
+    if (document.activeElement !== wrap) return;       /* only when focused: never hijack page scroll */
+    e.preventDefault();
+    api.set(val + (e.deltaY < 0 ? 1 : -1) * step * (e.shiftKey ? 1 : 2));
+  }, { passive: false });
+
+  /* tap the value to type it in */
+  function startEdit() {
+    if (!read || editing) return;
+    editing = true;
+    const inp = document.createElement("input");
+    inp.className = "knob-edit";
+    inp.type = "text";
+    inp.inputMode = "decimal";
+    inp.value = String(val);
+    inp.setAttribute("aria-label", `${label} value`);
+    read.textContent = "";
+    read.appendChild(inp);
+    inp.focus(); inp.select();
+    let done = false;
+    const finish = (apply) => {
+      if (done) return; done = true;
+      editing = false;
+      if (apply) {
+        const m = String(inp.value).replace(/[−–]/g, "-").replace(",", ".").match(/-?\d+(?:\.\d+)?/);
+        if (m) api.set(parseFloat(m[0]), { snap: true, force: true });
+      }
+      if (inp.parentNode === read) read.removeChild(inp);
+      read.textContent = fmt(val);
+      if (!apply || true) wrap.focus({ preventScroll: true });
+    };
+    inp.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); finish(true); }
+      else if (e.key === "Escape") { e.preventDefault(); finish(false); }
+      e.stopPropagation();
+    });
+    inp.addEventListener("blur", () => finish(true));
+  }
+  if (read) {
+    read.tabIndex = 0;
+    read.setAttribute("role", "button");
+    read.setAttribute("aria-label", `${label}: tap to type a value`);
+    read.classList.add("editable");
+    read.addEventListener("click", (e) => { if (e.target === read) startEdit(); });
+    read.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); startEdit(); } });
   }
 
-  wrap.addEventListener("pointerdown", (e) => {
-    active = true;
-    startY = e.clientY;
-    prevVal = val;
-    wrap.classList.add("dragging");
-    try { wrap.setPointerCapture(e.pointerId); } catch (_) {}
-  });
-  wrap.addEventListener("pointermove", (e) => {
-    if (!active) return;
-    const delta = (startY - e.clientY) / 140;
-    val = Math.min(max, Math.max(min, prevVal + delta * (max - min)));
-    render();
-  });
-  wrap.addEventListener("pointerup", () => {
-    active = false;
-    wrap.classList.remove("dragging");
-  });
-  wrap.addEventListener("dblclick", () => {
-    val = +wrap.dataset.val;
-    render();
-  });
-
-  render();
-  window.knobSet = window.knobSet || {};
-  window.knobSet[key] = (next) => { val = Math.min(max, Math.max(min, next)); render(); };
-});
+  window.knobSet[key] = (next) => api.set(next, { force: true });
+  paint(shown);
+  commit();
+  return api;
+}
+window.HSKnobs = { init: initKnob, initAll: (root = document) => root.querySelectorAll(".knob-wrap[data-knob]").forEach(initKnob) };
+HSKnobs.initAll();
 
 /* ── audio engine ──────────────────────────────────────────────── */
 
 function ensureCtx() {
   if (!engine.ctx) {
-    engine.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    engine.ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: "interactive" });
     engine.master = engine.ctx.createGain();
-    engine.master.gain.value = 0.9;
+    engine.master.gain.value = 1;
     engine.analyser = engine.ctx.createAnalyser();
     engine.analyser.fftSize = 512;
     engine.master.connect(engine.analyser);
     engine.analyser.connect(engine.ctx.destination);
   }
-  if (engine.ctx.state === "suspended") engine.ctx.resume();
+  if (engine.ctx.state === "suspended" && !engine.paused) engine.ctx.resume();
   return engine.ctx;
 }
 
-function rampParam(audioParam, value, seconds) {
-  const now = engine.ctx.currentTime;
-  const cur = audioParam.value;
-  audioParam.cancelScheduledValues(now);
-  audioParam.setValueAtTime(cur, now);
-  audioParam.linearRampToValueAtTime(value, now + seconds);
-}
 function screwRate() {
   return Math.max(0.5, Math.min(2, params.time / 100));
 }
-function applyParams() {
-  if (!engine.playing) return;
-  const rate = screwRate();
-  const w = params.mix / 100;
+/* every control change glides (AudioParam setTargetAtTime + per-sample smoothing in the worklet) */
+function applyParams(tc) {
+  if (!engine.chain) return;
+  const ctx = engine.ctx, t = ctx.currentTime, k = tc || engine.slew || HSFX.TC;
   try {
+    engine.chain.apply(params, k);
     if (engine.worklet) {
-      rampParam(engine.worklet.parameters.get("rate"), rate, 0.12);
-      rampParam(engine.worklet.parameters.get("pitch"), params.pitch, 0.12);
-      rampParam(engine.worklet.parameters.get("wow"), params.wow / 100, 0.08);
-    } else if (engine.wet) {
-      rampParam(engine.wet.playbackRate, rate, 0.12);
-      rampParam(engine.wet.detune, Math.round(params.pitch) * 100, 0.12);
+      [["rate", screwRate()], ["pitch", Math.round(params.pitch)], ["wow", params.wow / 100]].forEach(([n, v]) => {
+        const p = engine.worklet.parameters.get(n);
+        p.cancelScheduledValues(t);
+        p.setTargetAtTime(v, t, k);
+      });
+    } else if (engine.fallbackSrc) {
+      const s = engine.fallbackSrc;
+      /* keep the position readout continuous when speed changes (no worklet reports it here) */
+      engine.pos = trackPos(); engine.posT = t; engine.step = screwRate() * Math.pow(2, Math.round(params.pitch) / 12);
+      s.playbackRate.cancelScheduledValues(t); s.playbackRate.setTargetAtTime(screwRate(), t, k);
+      s.detune.cancelScheduledValues(t); s.detune.setTargetAtTime(Math.round(params.pitch) * 100, t, k);
     }
-    if (engine.wetGain) rampParam(engine.wetGain.gain, w, 0.08);
-    if (engine.dryGain) rampParam(engine.dryGain.gain, 1 - w, 0.08);
   } catch (_) {}
 }
-async function ensureWorklet() {
+
+/* one persistent graph:  varispeed -> EQ/FX chain -> limiter -> master -> analyser -> out */
+function ensureGraph() {
+  if (engine.graph) return engine.graph;
   const ctx = ensureCtx();
-  if (engine.worklet) return engine.worklet;
-  await ctx.audioWorklet.addModule("halfscrew-worklet.js");
-  engine.worklet = new AudioWorkletNode(ctx, "halfscrew-processor", { outputChannelCount: [2] });
-  return engine.worklet;
+  engine.graph = (async () => {
+    engine.chain = HSFX.buildChain(ctx);
+    try {
+      await ctx.audioWorklet.addModule("halfscrew-dsp.js?v=3");
+      await ctx.audioWorklet.addModule("halfscrew-worklet.js?v=2");
+      engine.worklet = new AudioWorkletNode(ctx, "halfscrew-processor", { outputChannelCount: [2] });
+      engine.limiter = new AudioWorkletNode(ctx, "halfscrew-limiter", { outputChannelCount: [2], channelCount: 2, channelCountMode: "explicit" });
+      engine.worklet.port.onmessage = (e) => {
+        const d = e.data;
+        if (d && d.type === "pos") { engine.pos = d.pos / engine.buffer.sampleRate; engine.step = d.step; engine.posT = d.t; }
+      };
+      engine.limiter.port.onmessage = (e) => { if (e.data && e.data.type === "gr") engine.gr = e.data.gain; };
+      engine.worklet.connect(engine.chain.input);
+      engine.chain.output.connect(engine.limiter);
+      engine.limiter.connect(engine.master);
+      engine.worklet.port.postMessage({ type: "hq", on: params.hq });
+    } catch (err) {
+      /* no AudioWorklet: plain varispeed source + compressor as safety net (no WOW in preview) */
+      engine.worklet = null; engine.limiter = null; engine.fallback = true;
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -3; comp.knee.value = 0; comp.ratio.value = 20; comp.attack.value = 0.002;
+      engine.chain.output.connect(comp); comp.connect(engine.master);
+    }
+    applyParams(0.001);
+    return true;
+  })();
+  return engine.graph;
 }
-function postFile(node, buffer, offset) {
+
+function postFile(node, buffer) {
   const channels = [];
   for (let c = 0; c < buffer.numberOfChannels; c++) channels.push(buffer.getChannelData(c).slice());
-  node.port.postMessage({ type: "file", channels });
-  node.port.postMessage({ type: "seek", pos: Math.floor(offset * buffer.sampleRate) });
+  node.port.postMessage({ type: "file", channels }, channels.map((c) => c.buffer));
 }
 
 function stopPlayback() {
-  [engine.dry, engine.wet].forEach((src) => {
-    try { src && src.stop(); } catch (_) {}
-  });
   if (engine.worklet) {
-    try { engine.worklet.port.postMessage({ type: "stop" }); engine.worklet.disconnect(); } catch (_) {}
+    try { engine.worklet.port.postMessage({ type: "stop" }); } catch (_) {}
   }
-  engine.dry = engine.wet = null;
+  if (engine.fallbackSrc) {
+    const s = engine.fallbackSrc; engine.fallbackSrc = null;
+    try { s.stop(engine.ctx.currentTime + 0.02); } catch (_) {}
+  }
   engine.playing = false;
+  engine.playTok = (engine.playTok || 0) + 1;
 }
 
 async function startPlayback(offset = 0) {
   const ctx = ensureCtx();
-  stopPlayback();
   if (!engine.buffer) return;
-  try { await ensureWorklet(); } catch (_) { engine.worklet = null; }
-
   engine.loopEnd = engine.buffer.__loopEnd || engine.buffer.duration;
   offset = Math.max(0, Math.min(offset, engine.loopEnd - 0.01));
-
-  engine.dry = ctx.createBufferSource();
-  engine.wet = ctx.createBufferSource();
-  engine.dry.buffer = engine.buffer;
-  engine.wet.buffer = engine.buffer;
-  engine.dry.loop = engine.wet.loop = true;
-  engine.dry.loopStart = engine.wet.loopStart = 0;
-  engine.dry.loopEnd = engine.wet.loopEnd = engine.loopEnd;
-
-  engine.dryGain = ctx.createGain();
-  engine.wetGain = ctx.createGain();
-  const comp = ctx.createDynamicsCompressor();
-  comp.threshold.value = -14;
-  comp.ratio.value = 4;
-
-  engine.dry.connect(engine.dryGain).connect(engine.master);
-  const w = params.mix / 100;
-  engine.wetGain.gain.value = w;
-  engine.dryGain.gain.value = 1 - w;
-  const t = ctx.currentTime + 0.05;
-  engine.dry.start(t, offset);
-  if (engine.worklet) {
-    postFile(engine.worklet, engine.buffer, offset);
-    engine.worklet.parameters.get("rate").value = screwRate();
-    engine.worklet.parameters.get("pitch").value = params.pitch;
-    engine.worklet.parameters.get("wow").value = params.wow / 100;
-    engine.worklet.connect(engine.wetGain).connect(comp).connect(engine.master);
-    engine.worklet.port.postMessage({ type: "play" });
-    engine.wet = null;
-  } else {
-    engine.wet.connect(engine.wetGain).connect(comp).connect(engine.master);
-    engine.wet.playbackRate.value = screwRate();
-    engine.wet.detune.value = Math.round(params.pitch) * 100;
-    engine.wet.start(t, offset);
-  }
-  engine.startAt = t;
+  engine.pos = offset; engine.posT = ctx.currentTime; engine.step = screwRate();
+  engine.startAt = ctx.currentTime;
   engine.offset = offset;
   engine.playing = true;
+  const tok = engine.playTok = (engine.playTok || 0) + 1;
+  engine.step = screwRate() * (engine.fallback ? Math.pow(2, Math.round(params.pitch) / 12) : 1);
+  await ensureGraph();
+  if (!engine.buffer || tok !== engine.playTok || !engine.playing) return;   /* stopped / restarted while the graph was loading */
+  if (engine.worklet) {
+    if (engine.sentBuffer !== engine.buffer) { postFile(engine.worklet, engine.buffer); engine.sentBuffer = engine.buffer; }
+    engine.worklet.port.postMessage({ type: "seek", pos: Math.floor(offset * engine.buffer.sampleRate) });
+    engine.worklet.port.postMessage({ type: "play" });
+  } else {
+    if (engine.fallbackSrc) { try { engine.fallbackSrc.stop(); } catch (_) {} }
+    const s = ctx.createBufferSource();
+    s.buffer = engine.buffer; s.loop = true; s.loopStart = 0; s.loopEnd = engine.loopEnd;
+    s.connect(engine.chain.input);
+    s.playbackRate.value = screwRate();
+    s.detune.value = Math.round(params.pitch) * 100;
+    s.start(ctx.currentTime + 0.02, offset);
+    engine.fallbackSrc = s;
+  }
+  engine.posT = ctx.currentTime;
   if (window.parent !== window) parent.postMessage({ type: "halfscrew-play" }, "*");
   try { new BroadcastChannel("nodaw-transport").postMessage({ type: "play", who: "halfscrew" }); } catch (_) {}
 }
@@ -348,7 +519,7 @@ function encodeWav(buffer) {
   return new Blob([out], { type: "audio/wav" });
 }
 
-function resample(src, ratio, wow = 0) {
+function resample(src, ratio, wow = 0, hq = false) {
   const outLen = Math.max(1, Math.ceil(src.length / ratio));
   const out = new AudioBuffer({ length: outLen, numberOfChannels: src.numberOfChannels, sampleRate: src.sampleRate });
   for (let c = 0; c < src.numberOfChannels; c++) {
@@ -359,9 +530,15 @@ function resample(src, ratio, wow = 0) {
       const wobble = Math.sin((i / src.sampleRate) * 2 * Math.PI * 0.35) * wow * 0.45;
       const x = pos; pos += ratio * Math.pow(2, wobble / 12);
       const i0 = Math.floor(x);
-      const i1 = Math.min(a.length - 1, i0 + 1);
       const f = x - i0;
-      b[i] = (a[i0] || 0) * (1 - f) + (a[i1] || 0) * f;
+      if (hq) {            /* HQ: 4-point Hermite, same interpolator as the live engine */
+        const n = a.length;
+        const g = (k) => (k >= 0 && k < n ? a[k] : 0);
+        b[i] = HSDSP.hermite(g(i0 - 1), g(i0), g(i0 + 1), g(i0 + 2), f);
+      } else {
+        const i1 = Math.min(a.length - 1, i0 + 1);
+        b[i] = (a[i0] || 0) * (1 - f) + (a[i1] || 0) * f;
+      }
     }
   }
   return out;
@@ -377,11 +554,21 @@ $("#exportBtn").addEventListener("click", async function () {
   const cents = Math.round(params.pitch) * 100;
   const src = engine.buffer;
   const ratio = rate * Math.pow(2, cents / 1200);
-  let rendered = resample(src, ratio, params.wow / 100);
+  const snap = Object.assign({}, params);              /* the export is the settings at the click */
+  let rendered = resample(src, ratio, snap.wow / 100, snap.hq);
+  const fxOn = HSFX.needsChain(snap);
+  if (fxOn) {
+    /* EQ + FX + dry/wet: the SAME graph the preview uses, rendered offline */
+    try { rendered = await HSFX.renderOffline(rendered, snap); }
+    catch (err) { $("#nowPlaying").textContent = "EXPORT FAILED · " + ((err && err.message) || err); return; }
+  }
+  /* safe output stage: -1 dBTP look-ahead limiter (identical to the preview's), then the demo cap */
+  const limited = HSFX.limitBuffer(rendered);
+  rendered = limited.buffer;
   const clipped = clipDemo(rendered);
   const blob = encodeWav(clipped);
   const base = (engine.trackName || "track").split(" ·")[0].replace(/\.[a-z0-9]+$/i, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "track";
-  const name = base + "-HalfScrew-t" + Math.round(params.time) + "-p" + Math.round(params.pitch) + "-w" + Math.round(params.wow) + "-mix" + Math.round(params.mix) + ".wav";
+  const name = base + "-HalfScrew-t" + Math.round(params.time) + "-p" + Math.round(params.pitch) + "-w" + Math.round(params.wow) + "-mix" + Math.round(params.mix) + (fxOn ? "-fx" : "") + ".wav";
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = name;
@@ -396,10 +583,13 @@ function reportFrame() {
   if (window.parent === window) return;
   const box = document.querySelector(".plugin");
   if (!box) return;
-  parent.postMessage({ type: "halfscrew-h", h: Math.ceil(box.getBoundingClientRect().height + 16) }, "*");
+  const dr = document.getElementById("fxDrawer");
+  const extra = dr && dr.classList.contains("open") && !dr.classList.contains("sheet") ? dr.offsetHeight * 0.92 : 0;
+  parent.postMessage({ type: "halfscrew-h", h: Math.ceil(box.getBoundingClientRect().height + 16 + extra) }, "*");
 }
 window.addEventListener("load", reportFrame);
 window.addEventListener("resize", reportFrame);
+window.addEventListener("hs-drawer", reportFrame);
 setTimeout(reportFrame, 400);
 
 /* ── waveform scope ────────────────────────────────────────────── */
@@ -450,9 +640,10 @@ let powered = true;
 
 function trackPos() {
   if (!engine.playing || !engine.buffer || !engine.loopEnd) return 0;
-  const rate = params.time / 100;
-  const elapsed = Math.max(0, engine.ctx.currentTime - engine.startAt);
-  return (engine.offset + elapsed * rate) % engine.loopEnd;
+  /* position is reported by the audio thread (exact, follows TIME/WOW changes) and
+     extrapolated at the current speed between reports: no jump when TIME moves */
+  const dt = Math.max(0, engine.ctx.currentTime - engine.posT);
+  return Math.max(0, (engine.pos + dt * engine.step) % engine.loopEnd);
 }
 
 function fmtTime(t) {
@@ -552,14 +743,21 @@ playBtn.addEventListener("click", () => {
     $("#nowPlaying").textContent = "PICK A TRACK FIRST · FROSTBITE, LATE NIGHT, OR LOAD YOUR OWN";
     return;
   }
-  if (engine.playing && engine.ctx.state === "running") {
-    engine.ctx.suspend();
+  if (engine.playing && engine.ctx.state === "running" && !engine.paused) {
     engine.paused = true;
+    const c = engine.ctx;                          /* 15 ms fade-out, then suspend: no click on pause */
+    engine.master.gain.cancelScheduledValues(c.currentTime);
+    engine.master.gain.setTargetAtTime(0, c.currentTime, 0.008);
+    setTimeout(() => { if (engine.paused) c.suspend(); }, 70);
     playBtn.innerHTML = ICON_PLAY;
     $("#nowPlaying").textContent = `PAUSED · ${engine.trackName}`;
   } else if (engine.ctx.state === "suspended") {
-    engine.ctx.resume();
     engine.paused = false;
+    engine.ctx.resume().then(() => {
+      const c = engine.ctx;
+      engine.master.gain.cancelScheduledValues(c.currentTime);
+      engine.master.gain.setTargetAtTime(1, c.currentTime, 0.008);
+    });
     playBtn.innerHTML = ICON_PAUSE;
     $("#nowPlaying").textContent = `NOW PLAYING · ${engine.trackName}`;
   } else if (!engine.playing) {
@@ -587,11 +785,23 @@ $("#powerBtn").addEventListener("click", function () {
 
 /* ── dry/wet ───────────────────────────────────────────────────── */
 
+/* HQ = 4-point Hermite interpolation (preview + export). Off = plain linear. */
+const hqSw = $("#sw-hq");
+if (hqSw) {
+  params.hq = hqSw.checked;
+  hqSw.addEventListener("change", () => {
+    params.hq = hqSw.checked;
+    if (engine.worklet) engine.worklet.port.postMessage({ type: "hq", on: params.hq });
+    $("#nowPlaying").textContent = params.hq ? "HQ · HERMITE RESAMPLING (PREVIEW + EXPORT)" : "HQ OFF · LINEAR RESAMPLING";
+  });
+}
+
 const mix = $("#mix");
 const mixRead = $("#mix-read");
 function renderMix() {
   mixRead.textContent = mix.value;
   mix.style.setProperty("--fill", `${mix.value}%`);
+  if (window.knobSet && knobSet.mix) { knobSet.mix(+mix.value); return; }   /* drawer knob owns the value */
   params.mix = +mix.value;
   applyParams();
 }
