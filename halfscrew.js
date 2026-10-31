@@ -354,9 +354,10 @@ function resample(src, ratio, wow = 0) {
   for (let c = 0; c < src.numberOfChannels; c++) {
     const a = src.getChannelData(c);
     const b = out.getChannelData(c);
+    let pos = 0;
     for (let i = 0; i < outLen; i++) {
       const wobble = Math.sin((i / src.sampleRate) * 2 * Math.PI * 0.35) * wow * 0.45;
-      const x = i * ratio * Math.pow(2, wobble / 12);
+      const x = pos; pos += ratio * Math.pow(2, wobble / 12);
       const i0 = Math.floor(x);
       const i1 = Math.min(a.length - 1, i0 + 1);
       const f = x - i0;
