@@ -2,16 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>HALFSCREW — The Slow Motion Potion</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=31">
+<link rel="stylesheet" href="style.css?v=32">
+<link rel="stylesheet" href="halfscrew-drawer.css?v=1">
 </head>
 <body>
 <script>if(window.parent!==window)document.body.classList.add("in-frame");</script>
 <main class="stage">
+  <div class="rack" id="rack">
   <div class="plugin" id="plugin">
 
     <!-- ── slim header ─────────────────────────────────────── -->
@@ -27,6 +29,7 @@
         <div class="head-tools">
           <button class="tool" id="waveBtn" title="Waveform view"><svg viewBox="0 0 24 24"><path d="M2 12h2l2-7 3 14 3-9 2 4h2l2-2h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></button>
           <button class="tool" id="playBtn" title="Play preview"><svg viewBox="0 0 24 24"><path d="M7 5v14l12-7z" fill="currentColor"/></svg></button>
+          <button class="tool fx-tool" id="fxBtn" type="button" title="EQ · FX · Strains" aria-label="EQ, FX and strains drawer" aria-controls="fxDrawer" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v18M12 3v18M19 3v18" stroke="currentColor" stroke-width="1.2" opacity=".35" stroke-linecap="round"/><rect x="3" y="12" width="4" height="3.4" rx="1" fill="currentColor"/><rect x="10" y="6" width="4" height="3.4" rx="1" fill="currentColor"/><rect x="17" y="14.5" width="4" height="3.4" rx="1" fill="currentColor"/></svg></button>
           <button class="tool" id="gearBtn" title="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
           <button class="tool power on" id="powerBtn" title="Power"><svg viewBox="0 0 24 24"><path d="M12 3v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7.2 6.4a7 7 0 1 0 9.6 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         </div>
@@ -99,13 +102,12 @@
     <footer class="strip">
       <div class="foot-controls">
         <div class="foot-line">
-          <label class="switch"><input type="checkbox" id="sw-hq" checked><span class="pill"></span><span class="sw-name">HQ</span></label>
+          <label class="switch" title="HQ: 4-point Hermite resampling in the preview and the export. Off = linear."><input type="checkbox" id="sw-hq" checked aria-describedby="hqNote"><span class="pill"></span><span class="sw-name">HQ</span></label>
+          <span id="hqNote" hidden>High quality resampling, applies to preview and export</span>
           <i class="sep" aria-hidden="true"></i>
-          <label class="switch"><input type="checkbox" id="sw-lowend" checked><span class="pill"></span><span class="sw-name">LOW-END</span></label>
-          <label class="switch"><input type="checkbox" id="sw-rubber"><span class="pill"></span><span class="sw-name">RUBBER</span></label>
           <div class="mix-row">
             <span class="sw-name">DRY/WET</span>
-            <input type="range" id="mix" min="0" max="100" value="100" aria-label="Dry wet mix">
+            <input type="range" id="mix" min="0" max="100" value="100" aria-label="Dry wet mix" title="Dry/wet: clean original (0) to fully processed (100). Applies to the preview and the export.">
             <output id="mix-read">100</output>
           </div>
         </div>
@@ -118,8 +120,9 @@
       <div class="foot-copy">
         <span>ANY SONG DRAG & DROP</span>
         <span>HALFTIME PERFECT SLOW DOWN</span>
-        <span>DEEP LOW-END PRESERVATION</span>
-        <span>HIGH QUALITY RUBBER BAND HQ</span>
+        <span>3-BAND EQ + 4 FX + 26 STRAINS</span>
+        <span>HQ HERMITE RESAMPLING</span>
+        <span>−1 dBTP SAFE EXPORT</span>
         <span>INSTANT PROCESSING</span>
         <span>WINDOWS MAC LINUX COMPATIBLE</span>
       </div>
@@ -127,10 +130,19 @@
 
     <i class="screw tl"></i><i class="screw tr"></i><i class="screw bl"></i><i class="screw br"></i>
   </div>
-  <p class="hint">tap the wave to jump · drag it to scan · drop a song on the display · export the screwed wav</p>
+
+  <!-- ── EQ · FX · STRAINS drawer: slides out from behind the chassis, retracts back ── -->
+  <button class="drawer-lip" id="fxLip" type="button" aria-controls="fxDrawer" aria-expanded="false"><span class="lip-led" aria-hidden="true"></span><span class="lip-txt">EQ · FX · STRAINS</span><svg class="lip-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <aside class="fx-drawer" id="fxDrawer" aria-label="EQ, effects and strains"></aside>
+  </div>
+  <div class="fx-backdrop" id="fxBackdrop" hidden></div>
+  <p class="hint">tap the wave to jump · drag it to scan · drop a song on the display · open EQ · FX · STRAINS under the deck · export the screwed wav</p>
 </main>
 <script>window.OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;</script>
-<script src="halfscrew.js?v=37"></script>
+<script src="halfscrew-dsp.js?v=3"></script>
+<script src="halfscrew-fx.js?v=1"></script>
+<script src="halfscrew.js?v=40"></script>
+<script src="halfscrew-drawer.js?v=2"></script>
 
 <script>
 window.OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
