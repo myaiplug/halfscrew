@@ -50,6 +50,9 @@ const FMT = {
   },
   pct: (v) => `${Math.round(v)}%`,
   db: (v) => `${v > 0 ? "+" : ""}${(Math.round(v * 2) / 2).toFixed(1)} dB`,
+  db1: (v) => `${v > 0.049 ? "+" : v < -0.049 ? "\u2212" : ""}${Math.abs(v).toFixed(1)} dB`,
+  hz: (v) => (v >= 1000 ? `${(v / 1000).toFixed(v >= 10000 ? 1 : 2).replace(/\.?0+$/, "")} kHz` : `${v < 100 ? v.toFixed(1).replace(/\.0$/, "") : Math.round(v)} Hz`),
+  q: (v) => `Q ${v < 1 ? v.toFixed(2) : v.toFixed(v < 10 ? 2 : 1)}`,
 };
 
 /* ── knobs: pointer-event drag with inertia, fine-adjust, keyboard, type-in ──
@@ -74,19 +77,26 @@ function knobWake(k) {
 window.knobSet = window.knobSet || {};
 function initKnob(wrap) {
   if (wrap.__knob) return wrap.__knob;
-  const min = +wrap.dataset.min;
-  const max = +wrap.dataset.max;
-  const step = +wrap.dataset.step || 1;
-  const def = +wrap.dataset.val;
-  const fmt = FMT[wrap.dataset.fmt];
+  let min = +wrap.dataset.min;
+  let max = +wrap.dataset.max;
+  let step = +wrap.dataset.step || 1;
+  let def = +wrap.dataset.val;
+  let fmt = FMT[wrap.dataset.fmt];
   const key = wrap.dataset.knob;
+  /* optional behaviours (used by the EQ's shared FREQ / GAIN / Q knobs, which re-bind to the selected band):
+     log travel, own rounding, multiplicative keyboard step, own parser, and a hook instead of params[key] */
+  let curve = wrap.dataset.curve || "lin", snapFn = null, stepMul = 0, parseFn = null, editFn = null, hook = null;
+  const toN = (v) => (curve === "log" ? Math.log(v / min) / Math.log(max / min) : (v - min) / (max - min));
+  const fromN = (n) => (curve === "log" ? min * Math.pow(max / min, n) : min + n * (max - min));
+  const clampV = (v) => Math.min(max, Math.max(min, v));
   const ring = $(".led-ring", wrap);
   const dial = $(".knob-dial", wrap);
   const read = document.getElementById(`read-${key}`);
-  const label = wrap.dataset.label || (wrap.closest(".knob-unit") && $(".knob-name", wrap.closest(".knob-unit")) ? $(".knob-name", wrap.closest(".knob-unit")).textContent : key);
+  let label = wrap.dataset.label || (wrap.closest(".knob-unit") && $(".knob-name", wrap.closest(".knob-unit")) ? $(".knob-name", wrap.closest(".knob-unit")).textContent : key);
   const q = (v) => {
-    const n = Math.round((Math.min(max, Math.max(min, v)) - min) / step) * step + min;
-    return +Math.min(max, Math.max(min, n)).toFixed(4);
+    if (snapFn) return clampV(snapFn(clampV(v)));
+    const n = Math.round((clampV(v) - min) / step) * step + min;
+    return +clampV(n).toFixed(4);
   };
 
   let val = q(def), raw = val, shown = val, editing = false;
@@ -100,12 +110,12 @@ function initKnob(wrap) {
   wrap.setAttribute("aria-valuemax", max);
 
   function paint(v) {
-    const pct = (v - min) / (max - min);
+    const pct = Math.min(1, Math.max(0, toN(v)));
     ring.style.setProperty("--arc", `${pct * 288}deg`);
     dial.style.transform = `rotate(${-144 + pct * 288}deg)`;
   }
   function commit() {
-    params[key] = val;
+    if (hook) hook(val); else params[key] = val;
     wrap.setAttribute("aria-valuenow", val);
     const txt = fmt(val);
     wrap.setAttribute("aria-valuetext", txt);
@@ -118,6 +128,7 @@ function initKnob(wrap) {
     applyParams();
     window.dispatchEvent(new CustomEvent("hs-param", { detail: { key, value: val } }));
   }
+  const stepBy = (v, n) => (stepMul ? v * Math.pow(stepMul, n) : v + step * n);
   const api = {
     key,
     get value() { return val; },
@@ -131,11 +142,36 @@ function initKnob(wrap) {
       if (REDUCED_MOTION.matches) { shown = val; paint(shown); } else knobWake(api);
     },
     reset() { api.set(def); },
+    /* re-bind this knob to another quantity (value is shown, not committed unless opts.commit) */
+    configure(o) {
+      if (o.min !== undefined) min = o.min;
+      if (o.max !== undefined) max = o.max;
+      if (o.step !== undefined) step = o.step;
+      if (o.def !== undefined) def = o.def;
+      if (o.fmt) fmt = typeof o.fmt === "string" ? FMT[o.fmt] : o.fmt;
+      if (o.curve) curve = o.curve;
+      if ("snap" in o) snapFn = o.snap;
+      if ("stepMul" in o) stepMul = o.stepMul || 0;
+      if ("parse" in o) parseFn = o.parse;
+      if ("edit" in o) editFn = o.edit;
+      if ("hook" in o) hook = o.hook;
+      if (o.label) { label = o.label; wrap.setAttribute("aria-label", label); }
+      wrap.setAttribute("aria-valuemin", min); wrap.setAttribute("aria-valuemax", max);
+      if (o.value !== undefined) {
+        val = q(o.value); raw = val;
+        if (o.jump) shown = val;
+        wrap.setAttribute("aria-valuenow", val);
+        const txt = fmt(val); wrap.setAttribute("aria-valuetext", txt);
+        if (read && !editing) read.textContent = txt;
+        if (REDUCED_MOTION.matches) { shown = val; paint(shown); } else knobWake(api);
+      }
+    },
     tick(dt) {
       if (shown === val) return false;
       const d = val - shown;
-      if (Math.abs(d) < (max - min) * 0.0004) { shown = val; paint(shown); return false; }
-      shown += d * (1 - Math.exp(-dt / 0.065));
+      if (Math.abs(toN(val) - toN(shown)) < 0.0004) { shown = val; paint(shown); return false; }
+      if (curve === "log") shown = Math.exp(Math.log(shown) + (Math.log(val) - Math.log(shown)) * (1 - Math.exp(-dt / 0.065)));
+      else shown += d * (1 - Math.exp(-dt / 0.065));
       paint(shown);
       return true;
     },
@@ -169,7 +205,7 @@ function initKnob(wrap) {
     moved = Math.max(moved, Math.hypot(e.clientX - downX, e.clientY - downY));
     const mod = e.shiftKey || e.ctrlKey || e.altKey || fine;
     wrap.classList.toggle("fine", mod);
-    raw = Math.min(max, Math.max(min, raw + (dy / 140) * (max - min) * (mod ? 0.1 : 1)));
+    raw = fromN(Math.min(1, Math.max(0, toN(raw) + (dy / 140) * (mod ? 0.1 : 1))));
     const nv = q(raw);
     if (nv !== val) { val = nv; commit(); }
     if (REDUCED_MOTION.matches) { shown = val; paint(shown); } else knobWake(api);
@@ -199,10 +235,10 @@ function initKnob(wrap) {
   wrap.addEventListener("keydown", (e) => {
     const big = e.shiftKey ? 10 : 1;
     let nv = null;
-    if (e.key === "ArrowUp" || e.key === "ArrowRight") nv = val + step * big;
-    else if (e.key === "ArrowDown" || e.key === "ArrowLeft") nv = val - step * big;
-    else if (e.key === "PageUp") nv = val + step * 10;
-    else if (e.key === "PageDown") nv = val - step * 10;
+    if (e.key === "ArrowUp" || e.key === "ArrowRight") nv = stepBy(val, big);
+    else if (e.key === "ArrowDown" || e.key === "ArrowLeft") nv = stepBy(val, -big);
+    else if (e.key === "PageUp") nv = stepBy(val, 10);
+    else if (e.key === "PageDown") nv = stepBy(val, -10);
     else if (e.key === "Home") nv = min;
     else if (e.key === "End") nv = max;
     else if (e.key === "Enter" && read) { e.preventDefault(); startEdit(); return; }
@@ -212,7 +248,7 @@ function initKnob(wrap) {
   wrap.addEventListener("wheel", (e) => {
     if (document.activeElement !== wrap) return;       /* only when focused: never hijack page scroll */
     e.preventDefault();
-    api.set(val + (e.deltaY < 0 ? 1 : -1) * step * (e.shiftKey ? 1 : 2));
+    api.set(stepBy(val, (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 1 : 2)));
   }, { passive: false });
 
   /* tap the value to type it in */
@@ -223,7 +259,7 @@ function initKnob(wrap) {
     inp.className = "knob-edit";
     inp.type = "text";
     inp.inputMode = "decimal";
-    inp.value = String(val);
+    inp.value = editFn ? editFn(val) : String(val);
     inp.setAttribute("aria-label", `${label} value`);
     read.textContent = "";
     read.appendChild(inp);
@@ -233,8 +269,10 @@ function initKnob(wrap) {
       if (done) return; done = true;
       editing = false;
       if (apply) {
-        const m = String(inp.value).replace(/[−–]/g, "-").replace(",", ".").match(/-?\d+(?:\.\d+)?/);
-        if (m) api.set(parseFloat(m[0]), { snap: true, force: true });
+        let num = null;
+        if (parseFn) num = parseFn(String(inp.value));
+        else { const m = String(inp.value).replace(/[−–]/g, "-").replace(",", ".").match(/-?\d+(?:\.\d+)?/); if (m) num = parseFloat(m[0]); }
+        if (num !== null && isFinite(num)) api.set(num, { snap: true, force: true });
       }
       if (inp.parentNode === read) read.removeChild(inp);
       read.textContent = fmt(val);
@@ -310,10 +348,11 @@ function ensureGraph() {
   if (engine.graph) return engine.graph;
   const ctx = ensureCtx();
   engine.graph = (async () => {
+    await HSEQ.load(ctx);                       /* the 8-band EQ worklet must exist before the chain is built */
     engine.chain = HSFX.buildChain(ctx);
     try {
-      await ctx.audioWorklet.addModule("halfscrew-dsp.js?v=41");
-      await ctx.audioWorklet.addModule("halfscrew-worklet.js?v=41");
+      await ctx.audioWorklet.addModule("halfscrew-dsp.js?v=43");
+      await ctx.audioWorklet.addModule("halfscrew-worklet.js?v=43");
       engine.worklet = new AudioWorkletNode(ctx, "halfscrew-processor", { outputChannelCount: [2] });
       engine.limiter = new AudioWorkletNode(ctx, "halfscrew-limiter", { outputChannelCount: [2], channelCount: 2, channelCountMode: "explicit" });
       engine.worklet.port.onmessage = (e) => {
