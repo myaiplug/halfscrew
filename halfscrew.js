@@ -5,8 +5,10 @@ function role() {
     const saved = JSON.parse(localStorage.getItem("halfscrew-pass") || "{}");
     const mail = String(saved.email || "").toLowerCase();
     if (saved.admin || ADMINS.some((a) => mail.includes(a))) return "admin";
-    if (saved.paid) return "unlimited";
+    if (saved.paid) return "unlimited";           /* legacy $19 Shopify pass: still honoured for existing holders */
   } catch (_) {}
+  /* $4 Gumroad license key: true only after the license service confirmed a signed token in THIS page session */
+  if (window.HSLicense && window.HSLicense.active()) return "unlimited";
   return "demo";
 }
 function clipDemo(buffer) {
@@ -351,8 +353,8 @@ function ensureGraph() {
     await HSEQ.load(ctx);                       /* the 8-band EQ worklet must exist before the chain is built */
     engine.chain = HSFX.buildChain(ctx);
     try {
-      await ctx.audioWorklet.addModule("halfscrew-dsp.js?v=43");
-      await ctx.audioWorklet.addModule("halfscrew-worklet.js?v=43");
+      await ctx.audioWorklet.addModule("halfscrew-dsp.js?v=44");
+      await ctx.audioWorklet.addModule("halfscrew-worklet.js?v=44");
       engine.worklet = new AudioWorkletNode(ctx, "halfscrew-processor", { outputChannelCount: [2] });
       engine.limiter = new AudioWorkletNode(ctx, "halfscrew-limiter", { outputChannelCount: [2], channelCount: 2, channelCountMode: "explicit" });
       engine.worklet.port.onmessage = (e) => {
