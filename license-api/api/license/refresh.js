@@ -1,5 +1,5 @@
 "use strict";
-const { refreshLicense } = require("../../lib/gumroad");
+const { refreshLicense } = require("../../lib/unlock");
 const { handleCors, licenseDeps, licenseResponse, readBody, sendJson } = require("../../lib/http");
 
 // POST { licenseKey } -> re-verifies with Gumroad WITHOUT counting a use and returns a fresh token.

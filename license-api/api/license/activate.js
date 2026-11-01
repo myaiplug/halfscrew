@@ -1,5 +1,5 @@
 "use strict";
-const { activateLicense } = require("../../lib/gumroad");
+const { activateLicense } = require("../../lib/unlock");
 const { handleCors, licenseDeps, licenseResponse, readBody, sendJson } = require("../../lib/http");
 
 // POST { licenseKey } -> verifies the Gumroad key (counts one activation) and returns a signed 24 h session token.
