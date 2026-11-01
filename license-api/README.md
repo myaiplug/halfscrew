@@ -20,6 +20,25 @@ The static site (GitHub Pages) calls it cross-origin; CORS only allows `https://
 | `HALFSCREW_ALLOWED_ORIGINS` | Optional CORS allow-list override. |
 | `HALFSCREW_MAX_ACTIVATIONS` | Optional cap override (default 5). |
 
+## Shopify purchases (shop.nodawlabs.com "HalfScrew Unlimited", SKU `HALFSREW-UNLIMITED`)
+
+Shopify has no license-key feature, so this API issues the key itself:
+
+1. Shopify fires the **Order payment** (`orders/paid`) webhook at `POST https://halfscrew-license.vercel.app/api/shopify/webhook`.
+2. The handler verifies `X-Shopify-Hmac-Sha256` (raw body), checks the order is paid and contains the SKU, derives the key `HSS-<order id base36>-XXXXXXXX-XXXXXXXX-XXXXXXXX` (HMAC of the order id, stateless, no DB) and emails it via Resend with a one-click `?license_key=` link.
+3. `activate` / `refresh` accept `HSS-` keys offline (HMAC check) in addition to Gumroad keys. With `SHOPIFY_STORE_DOMAIN` + `SHOPIFY_ADMIN_TOKEN` set they also reject refunded / cancelled orders. Shopify keys have no 5-browser counter (stateless).
+
+Failure behaviour: unconfigured email -> 503, Resend error -> 502, so Shopify retries instead of silently losing the key. Retries are safe (Resend `Idempotency-Key` per order).
+Support: `HALFSCREW_LICENSE_SECRET=... node scripts/issue-shopify-key.js <order id>` re-derives a buyer's key.
+
+| Variable | Purpose |
+| --- | --- |
+| `SHOPIFY_WEBHOOK_SECRET` | Signing secret of the webhook (Shopify admin > Settings > Notifications > Webhooks shows it). |
+| `RESEND_API_KEY`, `HALFSCREW_FROM_EMAIL` | Email sender, e.g. `HalfScrew <orders@your-verified-domain>`. |
+| `HALFSCREW_SHOPIFY_KEY_SECRET` | Optional separate >=32 char key-minting secret (defaults to `HALFSCREW_LICENSE_SECRET`). |
+| `HALFSCREW_SHOPIFY_SKUS` | Optional comma list of SKUs (default `HALFSREW-UNLIMITED`). |
+| `SHOPIFY_STORE_DOMAIN`, `SHOPIFY_ADMIN_TOKEN` | Optional (read_orders) for the refund/cancel check. |
+
 ## Gumroad product settings
 * Product type: **Digital product** (not a bundle), name **HalfScrew — Unlimited Exports**, price **$4**, permalink `halfscrew`.
 * Enable **Generate a unique license key per sale** (license keys). Leave "limit activations" off - the API enforces 5 browsers itself.
