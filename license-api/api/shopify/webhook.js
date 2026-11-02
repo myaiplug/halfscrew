@@ -6,18 +6,22 @@ const { sendKeyEmail } = require("../../lib/email");
 // Server-to-server only (no CORS). Needs the RAW body for the HMAC, so Vercel's body parser is switched off.
 
 async function rawBody(req) {
+  // Read the unconsumed stream FIRST: on Vercel, merely touching req.body makes the runtime parse (and drain) the stream, losing the exact bytes the HMAC covers.
+  if (typeof req.on === "function" && req.readable !== false && !req.readableEnded) {
+    const chunks = [];
+    let size = 0;
+    for await (const c of req) {
+      const b = typeof c === "string" ? Buffer.from(c) : c;
+      size += b.length;
+      if (size > 2 * 1024 * 1024) return null;
+      chunks.push(b);
+    }
+    if (chunks.length) return Buffer.concat(chunks);
+  }
+  // Fallback for runtimes that already buffered the body: only a Buffer/string preserves the exact bytes (a parsed object cannot be verified).
   if (Buffer.isBuffer(req.body)) return req.body;
   if (typeof req.body === "string") return Buffer.from(req.body);
-  if (req.body && typeof req.body === "object") return null; // already parsed -> exact bytes lost -> cannot verify
-  const chunks = [];
-  let size = 0;
-  for await (const c of req) {
-    const b = typeof c === "string" ? Buffer.from(c) : c;
-    size += b.length;
-    if (size > 2 * 1024 * 1024) return null;
-    chunks.push(b);
-  }
-  return Buffer.concat(chunks);
+  return null;
 }
 
 function reply(res, status, body) {
