@@ -9,8 +9,10 @@ async function shopifyUnlock(licenseKey, deps) {
   if (!secretOk(secret) || !secretOk(deps.secret)) return { status: "not_configured", message: "License checking isn't configured yet. Please try again later." };
   const v = verifyKey(licenseKey, secret);
   if (!v.valid) return { status: "invalid", message: "That license key wasn't recognized for HalfScrew. Paste the full key from your order email (it starts with HSS-)." };
+  const refundMsg = `This order was refunded or cancelled, so the key no longer works. Email ${deps.supportEmail} if that's a mistake.`;
+  if (Array.isArray(deps.revokedOrders) && deps.revokedOrders.includes(v.orderId)) return { status: "refunded", message: refundMsg };
   const order = await checkOrderStillGood(v.orderId, deps);
-  if (order.kind === "revoked") return { status: "refunded", message: `This order was refunded or cancelled, so the key no longer works. Email ${deps.supportEmail} if that's a mistake.` };
+  if (order.kind === "revoked") return { status: "refunded", message: refundMsg };
   if (order.kind === "outage") return { status: "outage", message: "Couldn't reach the order service. Please try again in a minute." };
   const t = issueToken(licenseKey.trim().toUpperCase(), deps.secret, (deps.now || Date.now)());
   return { status: "active", token: t.token, expiresAt: t.expiresAt };

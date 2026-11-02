@@ -1,5 +1,5 @@
 "use strict";
-const { deriveKey, keySecret, secretOk, productSkus, orderHasHalfScrew, orderIsPaid, verifyWebhookHmac } = require("../../lib/shopify");
+const { deriveKey, keySecret, secretOk, productSkus, productIds, orderHasHalfScrew, orderIsPaid, verifyWebhookHmac } = require("../../lib/shopify");
 const { sendKeyEmail } = require("../../lib/email");
 
 // Shopify "Order payment" (orders/paid) webhook -> emails the buyer their HalfScrew key.
@@ -36,7 +36,7 @@ async function handle(req, res, env = process.env, fetchImpl) {
 
   let order;
   try { order = JSON.parse(raw.toString("utf8")); } catch { return reply(res, 400, { ok: false, error: "Bad JSON." }); }
-  if (!orderHasHalfScrew(order, productSkus(env))) return reply(res, 200, { ok: true, ignored: "not_halfscrew" });
+  if (!orderHasHalfScrew(order, productSkus(env), productIds(env))) return reply(res, 200, { ok: true, ignored: "not_halfscrew" });
   if (!orderIsPaid(order)) return reply(res, 200, { ok: true, ignored: "not_paid" });
 
   const secret = keySecret(env);

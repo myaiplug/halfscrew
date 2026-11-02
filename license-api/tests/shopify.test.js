@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const crypto = require("node:crypto");
 const { Readable } = require("node:stream");
 const test = require("node:test");
-const { deriveKey, verifyKey, verifyWebhookHmac, orderHasHalfScrew, orderIsPaid, productSkus } = require("../lib/shopify");
+const { deriveKey, verifyKey, verifyWebhookHmac, orderHasHalfScrew, orderIsPaid, productSkus, productIds } = require("../lib/shopify");
 const { activateLicense, refreshLicense } = require("../lib/unlock");
 const { verifyToken } = require("../lib/token");
 const { buildKeyEmail } = require("../lib/email");
@@ -148,4 +148,18 @@ test("webhook: email not configured -> 503, provider failure -> 502 (Shopify ret
 test("email body escapes the order name", () => {
   const m = buildKeyEmail({ licenseKey: "HSS-A-00000000-00000000-00000000", orderName: "<b>x</b>" });
   assert.ok(!m.html.includes("<b>x</b>"));
+});
+
+test("order filter also matches the Shopify product id (SKU edited) but not other products", () => {
+  const o = (li) => order({ line_items: [li] });
+  assert.equal(orderHasHalfScrew(o({ sku: "RENAMED", product_id: 15418619887922 }), productSkus({}), productIds({})), true);
+  assert.equal(orderHasHalfScrew(o({ sku: "", product_id: 999 }), productSkus({}), productIds({})), false);
+  assert.equal(orderHasHalfScrew(o({ sku: "X", product_id: 7 }), productSkus({}), productIds({ HALFSCREW_SHOPIFY_PRODUCT_IDS: "7, 8" })), true);
+});
+
+test("HALFSCREW_REVOKED_ORDERS revokes a key without needing an Admin token", async () => {
+  const key = deriveKey(ORDER_ID, SECRET);
+  assert.equal((await activateLicense(key, deps({ revokedOrders: [ORDER_ID] }))).status, "refunded");
+  assert.equal((await refreshLicense(key, deps({ revokedOrders: [ORDER_ID] }))).status, "refunded");
+  assert.equal((await activateLicense(key, deps({ revokedOrders: ["1"] }))).status, "active");
 });

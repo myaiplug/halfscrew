@@ -15,6 +15,7 @@ function licenseDeps(env = process.env) {
     shopifyKeySecret: env.HALFSCREW_SHOPIFY_KEY_SECRET || undefined,
     shopifyStoreDomain: String(env.SHOPIFY_STORE_DOMAIN || "").trim(),
     shopifyAdminToken: env.SHOPIFY_ADMIN_TOKEN || undefined,
+    revokedOrders: String(env.HALFSCREW_REVOKED_ORDERS || "").split(",").map((s) => s.trim()).filter(Boolean),
   };
 }
 

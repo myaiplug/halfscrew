@@ -7,6 +7,7 @@ const crypto = require("node:crypto");
 
 const KEY_PREFIX = "HSS-";
 const DEFAULT_SKUS = ["HALFSREW-UNLIMITED"]; // the SKU on shop.nodawlabs.com (sic: "HALFSREW")
+const DEFAULT_PRODUCT_IDS = ["15418619887922"]; // shop.nodawlabs.com product "halfscrew-unlimited"; matched in addition to the SKU so a SKU edit cannot silently stop key delivery
 const DOMAIN = "halfscrew.shopify.v1:";
 
 const keySecret = (env = process.env) => env.HALFSCREW_SHOPIFY_KEY_SECRET || env.HALFSCREW_LICENSE_SECRET;
@@ -15,6 +16,11 @@ const secretOk = (s) => typeof s === "string" && s.length >= 32;
 function productSkus(env = process.env) {
   const list = String(env.HALFSCREW_SHOPIFY_SKUS || "").split(",").map((s) => s.trim().toUpperCase()).filter(Boolean);
   return list.length ? list : DEFAULT_SKUS;
+}
+
+function productIds(env = process.env) {
+  const list = String(env.HALFSCREW_SHOPIFY_PRODUCT_IDS || "").split(",").map((s) => s.trim()).filter(Boolean);
+  return list.length ? list : DEFAULT_PRODUCT_IDS;
 }
 
 function mac(orderId, secret) {
@@ -52,7 +58,7 @@ function verifyWebhookHmac(rawBody, header, secret) {
   return given.length === expected.length && crypto.timingSafeEqual(given, expected);
 }
 
-const orderHasHalfScrew = (order, skus) => Array.isArray(order && order.line_items) && order.line_items.some((i) => skus.includes(String(i.sku || "").trim().toUpperCase()));
+const orderHasHalfScrew = (order, skus, ids = []) => Array.isArray(order && order.line_items) && order.line_items.some((i) => skus.includes(String(i.sku || "").trim().toUpperCase()) || (i.product_id != null && ids.includes(String(i.product_id))));
 const orderIsPaid = (order) => !!order && order.financial_status === "paid" && !order.cancelled_at;
 
 // Optional revocation check (refund / cancel) via the Shopify Admin API. Needs SHOPIFY_STORE_DOMAIN + SHOPIFY_ADMIN_TOKEN.
@@ -75,4 +81,4 @@ async function checkOrderStillGood(orderId, deps) {
   } catch { return { kind: "outage" }; } finally { clearTimeout(timer); }
 }
 
-module.exports = { KEY_PREFIX, DEFAULT_SKUS, keySecret, secretOk, productSkus, deriveKey, verifyKey, isShopifyKey, verifyWebhookHmac, orderHasHalfScrew, orderIsPaid, checkOrderStillGood };
+module.exports = { KEY_PREFIX, DEFAULT_SKUS, DEFAULT_PRODUCT_IDS, keySecret, secretOk, productSkus, productIds, deriveKey, verifyKey, isShopifyKey, verifyWebhookHmac, orderHasHalfScrew, orderIsPaid, checkOrderStillGood };

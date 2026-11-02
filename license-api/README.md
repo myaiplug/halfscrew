@@ -37,6 +37,8 @@ Support: `HALFSCREW_LICENSE_SECRET=... node scripts/issue-shopify-key.js <order 
 | `RESEND_API_KEY`, `HALFSCREW_FROM_EMAIL` | Email sender, e.g. `HalfScrew <orders@your-verified-domain>`. |
 | `HALFSCREW_SHOPIFY_KEY_SECRET` | Optional separate >=32 char key-minting secret (defaults to `HALFSCREW_LICENSE_SECRET`). |
 | `HALFSCREW_SHOPIFY_SKUS` | Optional comma list of SKUs (default `HALFSREW-UNLIMITED`). |
+| `HALFSCREW_SHOPIFY_PRODUCT_IDS` | Optional comma list of Shopify product ids matched in addition to the SKU (default `15418619887922`, "HalfScrew Unlimited"). |
+| `HALFSCREW_REVOKED_ORDERS` | Optional comma list of Shopify order ids whose keys are refused (manual refund revocation; needs a redeploy to take effect). |
 | `SHOPIFY_STORE_DOMAIN`, `SHOPIFY_ADMIN_TOKEN` | Optional (read_orders) for the refund/cancel check. |
 
 ## Gumroad product settings
