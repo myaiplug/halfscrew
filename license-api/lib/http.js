@@ -12,6 +12,10 @@ function licenseDeps(env = process.env) {
     secret: env.HALFSCREW_LICENSE_SECRET,
     maxActivations: Number.isFinite(max) && max > 0 ? max : DEFAULT_MAX_ACTIVATIONS,
     supportEmail: SUPPORT_EMAIL,
+    shopifyKeySecret: env.HALFSCREW_SHOPIFY_KEY_SECRET || undefined,
+    shopifyStoreDomain: String(env.SHOPIFY_STORE_DOMAIN || "").trim(),
+    shopifyAdminToken: env.SHOPIFY_ADMIN_TOKEN || undefined,
+    revokedOrders: String(env.HALFSCREW_REVOKED_ORDERS || "").split(",").map((s) => s.trim()).filter(Boolean),
   };
 }
 
